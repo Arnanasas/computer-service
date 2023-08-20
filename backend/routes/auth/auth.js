@@ -95,24 +95,4 @@ router.post("/login", async (req, res) => {
 });
 
 
-router.post("/login", async (req, res) => {
-  // CHECKING IF USER EMAIL EXISTS
-
-
-  try {
-    // VALIDATION OF USER INPUTS
-
-    const { error } = await loginSchema.validateAsync(req.body);
-    if (error) return res.status(400).send(error.details[0].message);
-    else {
-      // SENDING BACK THE TOKEN
-      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-      res.header("auth-token", token).send(token);
-    // res.send("success");
-    }
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
 module.exports = router;

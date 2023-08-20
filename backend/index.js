@@ -35,7 +35,7 @@ mongoose.connect(
 
 //MIDDLEWARE -> DISALBING CORS AND USED FOR JSON OUTPUT
 app.use(express.json(), cors({
-    origin: "http://127.0.0.1:5500", // Replace with your frontend's URL
+    origin: "http://localhost:3000", // Replace with your frontend's URL
     credentials: true, // Allow credentials (cookies)
 }));
 

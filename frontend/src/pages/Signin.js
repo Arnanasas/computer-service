@@ -1,8 +1,29 @@
-import React from "react";
+import React, {useState} from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 export default function Signin() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = { email, password };
+
+    try {
+      const response = await axios.post("http://localhost:4050/api/users/login", data, 
+      {
+        withCredentials: true,
+      }
+      );
+      console.log("Login successful:", response.data);
+        } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
+
   return (
     <div className="page-sign">
       <Card className="card-sign">
@@ -12,14 +33,14 @@ export default function Signin() {
           <Card.Text>Welcome back! Please signin to continue.</Card.Text>
         </Card.Header>
         <Card.Body>
-          <Form method="get" action="/dashboard/finance">
+          <Form onSubmit={handleSubmit}>
             <div className="mb-4">
               <Form.Label >Email address</Form.Label>
-              <Form.Control type="text" placeholder="Enter your email address" value="me@themepixels.com" />
+              <Form.Control type="text" placeholder="Enter your email address" value={email} onChange={(e) => setEmail(e.target.value)}/>
             </div>
             <div className="mb-4">
               <Form.Label className="d-flex justify-content-between">Password <Link to="">Forgot password?</Link></Form.Label>
-              <Form.Control type="password" placeholder="Enter your password" value="password123" />
+              <Form.Control type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button type="submit" variant="primary" className="btn-sign">Sign In</Button>
 

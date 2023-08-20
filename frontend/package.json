@@ -15,6 +15,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "apexcharts": "^3.37.0",
+    "axios": "^1.4.0",
     "bootstrap": "^5.2.3",
     "chart.js": "^4.2.0",
     "cryptofont": "^0.1.1",

@@ -2,10 +2,14 @@ import React, {useState} from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const {login} = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,6 +23,8 @@ export default function Signin() {
       }
       );
       console.log("Login successful:", response.data);
+      login(response.data);
+      navigate("/dashboard/analytics");
         } catch (error) {
       console.error("Login failed:", error);
     }

@@ -87,7 +87,7 @@ router.post("/login", async (req, res) => {
         path: "/", // Adjust as needed
       });
 
-      res.status(200).send("Logged in successfully");
+      res.status(200).send(user.nickname);
     }
   } catch (error) {
     res.status(500).send(error);

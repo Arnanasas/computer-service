@@ -5,6 +5,7 @@ import NotFound from "./pages/NotFound";
 
 import publicRoutes from "./routes/PublicRoutes";
 import protectedRoutes from "./routes/ProtectedRoutes";
+import { AuthProvider } from './AuthContext';
 
 // import css
 import "./assets/css/remixicon.css";
@@ -26,6 +27,7 @@ window.addEventListener("load", function () {
 export default function App() {
   return (
     <React.Fragment>
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Main />}>
@@ -48,9 +50,11 @@ export default function App() {
               />
             )
           })}
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </React.Fragment>
     
   );

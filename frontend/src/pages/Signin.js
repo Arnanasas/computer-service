@@ -24,7 +24,7 @@ export default function Signin() {
       );
       console.log("Login successful:", response.data);
       login(response.data);
-      navigate("/dashboard/analytics");
+      navigate("/services");
         } catch (error) {
       console.error("Login failed:", error);
     }

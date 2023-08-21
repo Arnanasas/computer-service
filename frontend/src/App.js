@@ -12,6 +12,9 @@ import "./assets/css/remixicon.css";
 
 // import scss
 import "./scss/style.scss";
+import Signin from "./pages/Signin";
+import WebsiteAnalytics from "./dashboard/WebsiteAnalytics";
+import ProtectedRoute from "./pages/ProtectedRoute";
 
 
 // set skin on load
@@ -30,7 +33,16 @@ export default function App() {
       <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Main />}>
+        <Route index element={<Main />} />
+        <Route path="login" element={<Signin />} />
+        <Route path="services" element={
+        <ProtectedRoute>
+          <WebsiteAnalytics />
+        </ProtectedRoute>
+        } />
+
+
+          {/* <Route path="/" element={<Main />}>
             {protectedRoutes.map((route, index) => {
               return (
                 <Route
@@ -49,7 +61,7 @@ export default function App() {
                 key={index}
               />
             )
-          })}
+          })} */}
 
           <Route path="*" element={<NotFound />} />
         </Routes>

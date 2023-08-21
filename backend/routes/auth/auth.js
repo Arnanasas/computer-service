@@ -77,7 +77,7 @@ router.post("/login", async (req, res) => {
     else {
 
       // SENDING BACK THE TOKEN IN AN HTTPONLY COOKIE
-      const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+      const token = jwt.sign({ nickname: user.nickname }, process.env.TOKEN_SECRET);
 
       res.cookie("auth-token", token, {
         httpOnly: true,
@@ -93,6 +93,7 @@ router.post("/login", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
 
 
 module.exports = router;

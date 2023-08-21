@@ -1,24 +1,46 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [loaded, setLoaded] = useState(false);
+  const [initLoaded, setInitLoaded] = useState(false);
 
-  const login = (username) => {
-    setIsAuthenticated(true);
-    setUsername(username);
+  const login = async (nickname) => {
+    setLoaded(false); // Set loaded to false before making the API call
+    try {
+      const response = await axios.get('http://localhost:4050/api/dashboard/me', {
+        withCredentials: true,
+      });
+      const { nickname } = response.data;
+
+      setNickname(nickname);
+      setIsAuthenticated(true);
+      setInitLoaded(true);
+      setLoaded(true); // Set loaded to true after successful API call
+    } catch (error) {
+      console.error('Error while logging in:', error);
+      setInitLoaded(true);
+      setLoaded(true); // Set loaded to true even on error
+    }
   };
 
   const logout = () => {
     setIsAuthenticated(false);
-    setUsername('');
+    setNickname('');
   };
 
+  useEffect(() => {
+    login();
+  }, []);
+
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, username, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ isAuthenticated, nickname, login, logout }}>
+      {initLoaded && children}
     </AuthContext.Provider>
   );
 }

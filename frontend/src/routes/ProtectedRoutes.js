@@ -82,7 +82,7 @@ import IconRemix from "../docs/IconRemix";
 import IconFeather from "../docs/IconFeather";
 
 const protectedRoutes = [
-  { path: "dashboard/finance", element: <FinanceMonitoring /> },
+  { path: "/", element: <FinanceMonitoring /> },
   { path: "dashboard/events", element: <EventManagement /> },
   { path: "dashboard/sales", element: <SalesMonitoring /> },
   { path: "dashboard/analytics", element: <WebsiteAnalytics /> },
@@ -154,7 +154,7 @@ const protectedRoutes = [
   { path: "docs/util/position", element: <UtilPosition /> },
   { path: "docs/util/typography", element: <UtilTypography /> },
   { path: "docs/util/shadows", element: <UtilShadows /> },
-  { path: "docs/util/extras", element: <UtilExtras /> }
-]
+  { path: "docs/util/extras", element: <UtilExtras /> },
+];
 
 export default protectedRoutes;

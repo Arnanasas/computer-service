@@ -19,7 +19,7 @@ The backend is developed using Node.js and Express. It serves as the server-side
 3. Create a `.env` file in the backend folder and provide the following content:
 
 ```
-DB_CONNECT=mongodb+srv://admin:admin@pcfix.kfimecs.mongodb.net/?retryWrites=true&w=majority
+DB_CONNECT=mongodb+srv://{username}:{password}@pcfix.kfimecs.mongodb.net/?retryWrites=true&w=majority
 TOKEN_SECRET=kasjkadnjsasbghcajhsncaksldlaisdjkansd
  ```
 

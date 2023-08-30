@@ -1,5 +1,7 @@
 const User = require("../../models/User");
 const verify = require("./authVerify");
+const Service = require("../../models/Service");
+const moment = require("moment"); // Import the moment library for date formatting
 
 const router = require("express").Router();
 
@@ -12,9 +14,91 @@ router.get("/allusers", verify, async (req, res) => {
   }
 });
 
-router.get('/me', verify, (req, res) => {
+router.get("/services", verify, async (req, res) => {
+  try {
+    const services = await Service.find();
+    res.status(200).json(services);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/services/:id", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+    const service = await Service.findOne({ id: serviceId });
+    res.status(200).json(service);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/services/:id", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+
+    // Find the service by ID and remove it
+    const deletedService = await Service.findOneAndRemove({ id: serviceId });
+
+    if (!deletedService) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.status(200).json({ message: "Service deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/services/:id", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+
+    // Find the service by ID and update it
+    const updatedService = await Service.findOneAndUpdate(
+      { id: serviceId },
+      req.body, // Use the incoming data to update the service
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedService) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.status(200).json({ message: "Service updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/services", verify, async (req, res) => {
+  try {
+    const serviceData = req.body;
+
+    // Calculate the number of devices fixed on the current date
+    const currentDate = moment().format("YYMMDD");
+    const devicesFixedToday = await Service.countDocuments({
+      id: { $regex: `^${currentDate}` },
+    });
+
+    const lastPhoneNumberDigit = serviceData.number.slice(-1);
+    const customId = `${currentDate}${lastPhoneNumberDigit}-${
+      devicesFixedToday + 1
+    }`;
+
+    const serviceWithId = { ...serviceData, id: customId };
+
+    const service = new Service(serviceWithId);
+    const savedService = await service.save();
+    res.status(201).json(savedService);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.get("/me", verify, (req, res) => {
   // req.user contains the decoded user from the JWT token
-  
+
   try {
     res.json(req.user);
   } catch (error) {

@@ -15,6 +15,7 @@ import "./assets/css/remixicon.css";
 
 // import scss
 import "./scss/style.scss";
+import EditService from "./dashboard/EditService";
 
 // set skin on load
 window.addEventListener("load", function () {
@@ -42,6 +43,15 @@ export default function App() {
                   />
                 );
               })}
+
+              <Route
+                path="/edit/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditService />
+                  </ProtectedRoute>
+                }
+              ></Route>
             </Route>
             {publicRoutes.map((route, index) => {
               return (

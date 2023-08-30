@@ -80,9 +80,15 @@ import MapLeaflet from "../docs/MapLeaflet";
 import MapVector from "../docs/MapVector";
 import IconRemix from "../docs/IconRemix";
 import IconFeather from "../docs/IconFeather";
+import AddService from "../dashboard/AddService";
 
 const protectedRoutes = [
   { path: "/", element: <FinanceMonitoring /> },
+  // {
+  //   path: "/edit/:id",
+  //   element: <EditService />,
+  // },
+  { path: "/add-service", element: <AddService /> },
   { path: "dashboard/events", element: <EventManagement /> },
   { path: "dashboard/sales", element: <SalesMonitoring /> },
   { path: "dashboard/analytics", element: <WebsiteAnalytics /> },

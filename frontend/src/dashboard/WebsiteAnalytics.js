@@ -17,12 +17,14 @@ import { dp1, dp2 } from "../data/DashboardData";
 import ReactApexChart from "react-apexcharts";
 import { VectorMap } from "@react-jvectormap/core";
 import { worldMill } from "@react-jvectormap/world";
-import data from "../routes/dummydata";
+// import data from "../routes/dummydata";
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
+import axios from "axios";
 
 export default function WebsiteAnalytics() {
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
+  const [data, setData] = useState([]);
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -44,11 +46,40 @@ export default function WebsiteAnalytics() {
     }
   };
 
+  const handleDelete = (serviceId) => {
+    axios
+      .delete(`http://localhost:4050/api/dashboard/services/${serviceId}`, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        console.log("Service deleted:", response.data.message);
+        setData(data.filter((item) => item.id !== serviceId));
+        // You might want to update your local state or fetch data again
+      })
+      .catch((error) => {
+        console.error("Error deleting service:", error);
+      });
+  };
+
   switchSkin(skin);
 
   useEffect(() => {
     switchSkin(skin);
   }, [skin]);
+
+  useEffect(() => {
+    // Fetch data from the API using Axios
+    axios
+      .get("http://localhost:4050/api/dashboard/services", {
+        withCredentials: true,
+      })
+      .then((response) => {
+        setData(response.data); // Update state with fetched data
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  }, []);
 
   return (
     <React.Fragment>
@@ -144,15 +175,12 @@ export default function WebsiteAnalytics() {
                       )}
                     </td>
                     <td>
-                      <button
-                        className="btn btn-link"
-                        onClick={() => console.log(item.id)}
-                      >
+                      <Link to={`/edit/${item.id}`}>
                         <FaEdit />
-                      </button>
+                      </Link>
                       <button
                         className="btn btn-link text-danger"
-                        onClick={() => console.log(item.id)}
+                        onClick={() => handleDelete(item.id)}
                       >
                         <FaTrash />
                       </button>

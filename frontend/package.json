@@ -21,6 +21,7 @@
     "cryptofont": "^0.1.1",
     "dompurify": "^2.4.3",
     "feather-icons": "^4.29.0",
+    "formik": "^2.4.3",
     "gridjs": "^6.0.6",
     "gridjs-react": "^6.0.1",
     "jquery": "^3.6.3",
@@ -43,7 +44,8 @@
     "react-router-dom": "^6.7.0",
     "react-scripts": "^5.0.1",
     "react-select": "^5.7.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "yup": "^1.2.0"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import {
   Button,
@@ -9,18 +9,10 @@ import {
   Col,
   Nav,
   OverlayTrigger,
-  ProgressBar,
   Row,
-  Table,
   Tooltip,
   Form,
 } from "react-bootstrap";
-import { dp1, dp2 } from "../data/DashboardData";
-import ReactApexChart from "react-apexcharts";
-import { VectorMap } from "@react-jvectormap/core";
-import { worldMill } from "@react-jvectormap/world";
-import data from "../routes/dummydata";
-import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import * as yup from "yup";
 import * as formik from "formik";
 import { useNavigate } from "react-router-dom";

@@ -1,28 +1,32 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import axios from "axios";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [nickname, setNickname] = useState('');
+  const [nickname, setNickname] = useState("");
+  // eslint-disable-next-line
   const [loaded, setLoaded] = useState(false);
   const [initLoaded, setInitLoaded] = useState(false);
 
   const login = async (nickname) => {
-    setLoaded(false); // Set loaded to false before making the API call
+    setLoaded(false);
     try {
-      const response = await axios.get('http://localhost:4050/api/dashboard/me', {
-        withCredentials: true,
-      });
+      const response = await axios.get(
+        "http://localhost:4050/api/dashboard/me",
+        {
+          withCredentials: true,
+        }
+      );
       const { nickname } = response.data;
 
       setNickname(nickname);
       setIsAuthenticated(true);
       setInitLoaded(true);
-      setLoaded(true); // Set loaded to true after successful API call
+      setLoaded(true);
     } catch (error) {
-      console.error('Error while logging in:', error);
+      console.error("Error while logging in:", error);
       setInitLoaded(true);
       setLoaded(true); // Set loaded to true even on error
     }
@@ -30,13 +34,12 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setIsAuthenticated(false);
-    setNickname('');
+    setNickname("");
   };
 
   useEffect(() => {
     login();
   }, []);
-
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, nickname, login, logout }}>

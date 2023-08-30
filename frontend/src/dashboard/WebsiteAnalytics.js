@@ -3,21 +3,15 @@ import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import {
-  Button,
   Card,
-  Col,
   Nav,
   OverlayTrigger,
-  ProgressBar,
-  Row,
   Table,
   Tooltip,
+  Modal,
+  Button,
 } from "react-bootstrap";
-import { dp1, dp2 } from "../data/DashboardData";
-import ReactApexChart from "react-apexcharts";
-import { VectorMap } from "@react-jvectormap/core";
-import { worldMill } from "@react-jvectormap/world";
-// import data from "../routes/dummydata";
+
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import axios from "axios";
 
@@ -81,6 +75,11 @@ export default function WebsiteAnalytics() {
       });
   }, []);
 
+  const [show, setShow] = useState(false);
+
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -116,6 +115,25 @@ export default function WebsiteAnalytics() {
             </OverlayTrigger>
           </Nav>
         </div>
+
+        <Button variant="primary" onClick={handleShow}>
+          Launch demo modal
+        </Button>
+
+        <Modal show={show} onHide={handleClose}>
+          <Modal.Header closeButton>
+            <Modal.Title>Modal heading</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>Woohoo, you are reading this text in a modal!</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Close
+            </Button>
+            <Button variant="primary" onClick={handleClose}>
+              Save Changes
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         <Card className="card-one mt-3">
           <Card.Header>

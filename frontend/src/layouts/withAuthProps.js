@@ -3,7 +3,7 @@ import { useAuth } from "../AuthContext";
 
 const withAuthProps = (WrappedComponent) => {
   return function WithAuthProps(props) {
-    const { nickname } = useAuth(); // Access nickname using the useAuth hook
+    const { nickname } = useAuth();
     return <WrappedComponent nickname={nickname} {...props} />;
   };
 };

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
@@ -15,7 +16,10 @@ import {
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import axios from "axios";
 
-export default function WebsiteAnalytics() {
+export default function Services() {
+  const filterId = window.location.pathname.split("/").pop();
+
+  const { filter } = useParams();
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
   const [data, setData] = useState([]);
@@ -64,7 +68,7 @@ export default function WebsiteAnalytics() {
   useEffect(() => {
     // Fetch data from the API using Axios
     axios
-      .get("http://localhost:4050/api/dashboard/services", {
+      .get(`http://localhost:4050/api/dashboard/services/${filter}`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -73,7 +77,7 @@ export default function WebsiteAnalytics() {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
-  }, []);
+  }, [filterId]);
 
   const [show, setShow] = useState(false);
 

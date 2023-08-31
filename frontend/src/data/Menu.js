@@ -1,22 +1,22 @@
 const dashboardMenu = [
   {
     label: "Taisoma vietoje",
-    link: "/services",
+    link: "/services/all",
     icon: "ri-pie-chart-2-line",
   },
   {
     label: "Neišvežta",
-    link: "/services",
+    link: "/services/to-send",
     icon: "ri-pie-chart-2-line",
   },
   {
     label: "Taisoma kitur",
-    link: "/services",
+    link: "/services/elsewhere",
     icon: "ri-pie-chart-2-line",
   },
   {
     label: "Laukiama klientų",
-    link: "/services",
+    link: "/services/waiting",
     icon: "ri-pie-chart-2-line",
   },
 ];

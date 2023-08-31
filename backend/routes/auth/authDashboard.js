@@ -14,16 +14,39 @@ router.get("/allusers", verify, async (req, res) => {
   }
 });
 
-router.get("/services", verify, async (req, res) => {
+router.get("/services/:filter", verify, async (req, res) => {
   try {
-    const services = await Service.find();
+    const filter = req.params.filter;
+    let query = {};
+
+    switch (filter) {
+      case "all":
+        query = { status: { $ne: "Atsiskaityta" } };
+        break;
+      case "to-send":
+        query = { status: "Neišsiųsta" };
+        break;
+      case "elsewhere":
+        query = { status: "Taisoma kitur" };
+        break;
+      case "waiting":
+        query = { status: "Laukiama klientų" };
+        break;
+      case "archive":
+        query = { status: "Atsiskaityta" };
+        break;
+      default:
+        return res.status(400).json({ error: "Invalid filter" });
+    }
+
+    const services = await Service.find(query);
     res.status(200).json(services);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.get("/services/:id", verify, async (req, res) => {
+router.get("/service/:id", verify, async (req, res) => {
   try {
     const serviceId = req.params.id;
     const service = await Service.findOne({ id: serviceId });
@@ -77,11 +100,22 @@ router.post("/services", verify, async (req, res) => {
 
     // Calculate the number of devices fixed on the current date
     const currentDate = moment().format("YYMMDD");
-    const devicesFixedToday = await Service.countDocuments({
-      id: { $regex: `^${currentDate}` },
-    });
+    const lastServiceFixedToday = await Service.findOne(
+      { id: { $regex: `^${currentDate}` } },
+      {},
+      { sort: { id: -1 } }
+    );
 
-    const lastPhoneNumberDigit = serviceData.number.slice(-1);
+    let lastPhoneNumberDigit, devicesFixedToday;
+
+    if (lastServiceFixedToday) {
+      devicesFixedToday = parseInt(lastServiceFixedToday.id.split("-")[1]);
+      lastPhoneNumberDigit = lastServiceFixedToday.number.slice(-1);
+    } else {
+      devicesFixedToday = 0;
+      lastPhoneNumberDigit = serviceData.number.slice(-1);
+    }
+
     const customId = `${currentDate}${lastPhoneNumberDigit}-${
       devicesFixedToday + 1
     }`;

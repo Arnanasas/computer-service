@@ -20,7 +20,7 @@ export default function AddService() {
   const { Formik } = formik;
 
   const validationSchema = yup.object().shape({
-    id: yup.number(),
+    id: yup.string(),
     name: yup.string().required("Name is required"),
     number: yup
       .string()
@@ -134,7 +134,7 @@ export default function AddService() {
                 failure: "asd",
                 price: "$80",
                 hasCharger: true,
-                status: "Pending",
+                status: "Taisoma vietoje",
                 isContacted: true,
               }}
             >
@@ -274,9 +274,11 @@ export default function AddService() {
                           onChange={handleChange}
                           isValid={touched.status && !errors.status}
                         >
-                          <option>Pending</option>
-                          <option>In Progress</option>
-                          <option>Completed</option>
+                          <option>Taisoma vietoje</option>
+                          <option>Neišvežta</option>
+                          <option>Taisoma kitur</option>
+                          <option>Laukiama klientų</option>
+                          <option>Atsiskaityta</option>
                         </Form.Control>
                       </div>
                     </Col>

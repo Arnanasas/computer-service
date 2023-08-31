@@ -83,7 +83,7 @@ export default function EditService() {
     console.log(serviceId);
     // Fetch service data when component mounts
     axios
-      .get(`http://localhost:4050/api/dashboard/services/${serviceId}`, {
+      .get(`http://localhost:4050/api/dashboard/service/${serviceId}`, {
         withCredentials: true,
       })
       .then((response) => {

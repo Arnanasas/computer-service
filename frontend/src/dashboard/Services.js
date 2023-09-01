@@ -17,7 +17,7 @@ import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; //
 import axios from "axios";
 
 export default function Services() {
-  const filterId = window.location.pathname.split("/").pop();
+  // const filterId = window.location.pathname.split("/").pop();
 
   const { filter } = useParams();
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
@@ -77,7 +77,7 @@ export default function Services() {
       .catch((error) => {
         console.error("Error fetching data:", error);
       });
-  }, [filterId]);
+  }, [filter]);
 
   const [show, setShow] = useState(false);
 
@@ -148,17 +148,17 @@ export default function Services() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Name</th>
-                  <th>Number</th>
-                  <th>Device Model</th>
-                  <th>Device Serial</th>
-                  <th>Failure</th>
-                  <th>Price</th>
+                  <th>Vardas</th>
+                  <th>Numeris</th>
+                  <th>Modelis</th>
+                  <th>Serijinis nr.</th>
+                  <th>Gedimas</th>
+                  <th>Kaina</th>
                   {/* <th>Has Charger</th> */}
-                  <th>Status</th>
+                  <th>Būsena</th>
                   {/* <th>Contacted</th> */}
                   <th>Info</th>
-                  <th>Actions</th>
+                  <th>Veiksmai</th>
                 </tr>
               </thead>
               <tbody>

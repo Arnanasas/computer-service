@@ -29,9 +29,9 @@ export default function EditService() {
     devicePassword: "",
     failure: "",
     price: "",
-    hasCharger: "",
+    hasCharger: false,
     status: "",
-    isContacted: "",
+    isContacted: false,
   });
 
   const { Formik } = formik;
@@ -148,13 +148,25 @@ export default function EditService() {
                     }
                   );
                   console.log(response.data);
-                  navigate("/dashboard/analytics");
+                  navigate(-1);
                 } catch (error) {
                   console.log(error);
                 }
               }}
               //   on
-              initialValues={data}
+              initialValues={{
+                id: data.id || "", // Ensure these values are strings
+                name: data.name || "",
+                number: data.number || "",
+                deviceModel: data.deviceModel || "",
+                deviceSerial: data.deviceSerial || "",
+                devicePassword: data.devicePassword || "",
+                failure: data.failure || "",
+                price: data.price || "",
+                hasCharger: Boolean(data.hasCharger), // Convert to boolean
+                status: data.status || "",
+                isContacted: Boolean(data.isContacted), // Convert to boolean
+              }}
               enableReinitialize={true}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
@@ -175,7 +187,7 @@ export default function EditService() {
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label htmlFor="name">Name</Form.Label>
+                        <Form.Label htmlFor="name">Vardas</Form.Label>
                         <Form.Control
                           type="text"
                           id="name"
@@ -193,7 +205,7 @@ export default function EditService() {
 
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="number">Number</Form.Label>
+                        <Form.Label htmlFor="number">Tel. Nr.</Form.Label>
                         <Form.Control
                           type="text"
                           id="number"
@@ -210,7 +222,7 @@ export default function EditService() {
 
                       <div className="mb-3">
                         <Form.Label htmlFor="deviceModel">
-                          Device Model
+                          Įrenginio modelis
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -231,7 +243,7 @@ export default function EditService() {
                     <Col md={6}>
                       <div className="mb-3">
                         <Form.Label htmlFor="deviceSerial">
-                          Device Serial
+                          Įrenginio serijinis kodas
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -249,7 +261,7 @@ export default function EditService() {
 
                       <div className="mb-3">
                         <Form.Label htmlFor="devicePassword">
-                          Device password
+                          Slaptažodis
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -269,7 +281,7 @@ export default function EditService() {
                     </Col>
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="failure">Failure</Form.Label>
+                        <Form.Label htmlFor="failure">Gedimas</Form.Label>
                         <Form.Control
                           type="text"
                           id="failure"
@@ -285,7 +297,7 @@ export default function EditService() {
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label>Status</Form.Label>
+                        <Form.Label>Būsena</Form.Label>
                         <Form.Control
                           as="select"
                           name="status"
@@ -293,9 +305,11 @@ export default function EditService() {
                           onChange={handleChange}
                           isValid={touched.status && !errors.status}
                         >
-                          <option>Pending</option>
-                          <option>In Progress</option>
-                          <option>Completed</option>
+                          <option>Taisoma vietoje</option>
+                          <option>Neišsiųsta</option>
+                          <option>Taisoma kitur</option>
+                          <option>Laukiama klientų</option>
+                          <option>Atsiskaityta</option>
                         </Form.Control>
                       </div>
                     </Col>
@@ -304,7 +318,7 @@ export default function EditService() {
                     <Col md={6}>
                       <Form.Group>
                         <div className="mb-3">
-                          <Form.Label htmlFor="price">Price</Form.Label>
+                          <Form.Label htmlFor="price">Kaina</Form.Label>
                           <Form.Control
                             type="text"
                             id="price"
@@ -325,11 +339,11 @@ export default function EditService() {
                     <div className="mb-3">
                       <Form.Check
                         type="switch"
-                        label="Has Charger"
+                        label="Pakrovėjas?"
                         id="hasCharger"
                         name="hasCharger"
-                        value={values.hasCharger}
-                        onChange={handleChange}
+                        checked={values.hasCharger} // Use checked instead of value
+                        onChange={(e) => handleChange(e, "hasCharger")}
                         isValid={touched.hasCharger && !errors.hasCharger}
                       />
                     </div>
@@ -338,19 +352,19 @@ export default function EditService() {
                     <div className="mb-3">
                       <Form.Check
                         type="switch"
-                        label="Is Contacted"
+                        label="Susisiekta?"
                         id="isContacted"
                         name="isContacted"
-                        value={values.isContacted}
-                        onChange={handleChange}
+                        checked={values.isContacted} // Use checked instead of value
+                        onChange={(e) => handleChange(e, "isContacted")}
                         isValid={touched.isContacted && !errors.isContacted}
                       />
                     </div>
                   </Form.Group>
                   <Button variant="primary" type="submit">
-                    Submit
+                    Patvirtinti
                   </Button>
-                  <Button onClick={console.log(errors)}>asd</Button>
+                  {/* <Button onClick={console.log(errors)}>asd</Button> */}
                 </Form>
               )}
             </Formik>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Header from "../layouts/Header";
+import { useNavigate } from "react-router-dom";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -17,6 +18,7 @@ import * as yup from "yup";
 import * as formik from "formik";
 
 export default function AddService() {
+  const navigate = useNavigate();
   const { Formik } = formik;
 
   const validationSchema = yup.object().shape({
@@ -119,23 +121,24 @@ export default function AddService() {
                     }
                   );
                   console.log(response.data);
+                  navigate("/services/all");
                 } catch (error) {
                   console.log(error);
                 }
               }}
               on
               initialValues={{
-                id: "2345678",
-                name: "Jane Doe",
-                number: "987-654-3210",
-                deviceModel: "Desktop Elite",
-                deviceSerial: "DE987654",
-                devicePassword: "mypassword",
-                failure: "asd",
-                price: "$80",
-                hasCharger: true,
-                status: "Taisoma vietoje",
-                isContacted: true,
+                id: "0000000-0",
+                name: "",
+                number: "",
+                deviceModel: "",
+                deviceSerial: "",
+                devicePassword: "",
+                failure: "",
+                price: "",
+                hasCharger: false,
+                status: "",
+                isContacted: false,
               }}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
@@ -156,7 +159,7 @@ export default function AddService() {
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label htmlFor="name">Name</Form.Label>
+                        <Form.Label htmlFor="name">Vardas</Form.Label>
                         <Form.Control
                           type="text"
                           id="name"
@@ -174,7 +177,7 @@ export default function AddService() {
 
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="number">Number</Form.Label>
+                        <Form.Label htmlFor="number">Tel. Nr.</Form.Label>
                         <Form.Control
                           type="text"
                           id="number"
@@ -191,7 +194,7 @@ export default function AddService() {
 
                       <div className="mb-3">
                         <Form.Label htmlFor="deviceModel">
-                          Device Model
+                          Įrenginio modelis
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -212,7 +215,7 @@ export default function AddService() {
                     <Col md={6}>
                       <div className="mb-3">
                         <Form.Label htmlFor="deviceSerial">
-                          Device Serial
+                          Įrenginio serijinis numeris
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -230,7 +233,7 @@ export default function AddService() {
 
                       <div className="mb-3">
                         <Form.Label htmlFor="devicePassword">
-                          Device password
+                          Slaptažodis
                         </Form.Label>
                         <Form.Control
                           type="text"
@@ -250,7 +253,7 @@ export default function AddService() {
                     </Col>
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="failure">Failure</Form.Label>
+                        <Form.Label htmlFor="failure">Gedimas</Form.Label>
                         <Form.Control
                           type="text"
                           id="failure"
@@ -266,7 +269,7 @@ export default function AddService() {
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label>Status</Form.Label>
+                        <Form.Label>Būsena</Form.Label>
                         <Form.Control
                           as="select"
                           name="status"
@@ -275,7 +278,7 @@ export default function AddService() {
                           isValid={touched.status && !errors.status}
                         >
                           <option>Taisoma vietoje</option>
-                          <option>Neišvežta</option>
+                          <option>Neišsiųsta</option>
                           <option>Taisoma kitur</option>
                           <option>Laukiama klientų</option>
                           <option>Atsiskaityta</option>
@@ -287,7 +290,7 @@ export default function AddService() {
                     <Col md={6}>
                       <Form.Group>
                         <div className="mb-3">
-                          <Form.Label htmlFor="price">Price</Form.Label>
+                          <Form.Label htmlFor="price">Kaina</Form.Label>
                           <Form.Control
                             type="text"
                             id="price"
@@ -308,7 +311,7 @@ export default function AddService() {
                     <div className="mb-3">
                       <Form.Check
                         type="switch"
-                        label="Has Charger"
+                        label="Pakrovėjas?"
                         id="hasCharger"
                         name="hasCharger"
                         value={values.hasCharger}
@@ -321,7 +324,7 @@ export default function AddService() {
                     <div className="mb-3">
                       <Form.Check
                         type="switch"
-                        label="Is Contacted"
+                        label="Susisiekta?"
                         id="isContacted"
                         name="isContacted"
                         value={values.isContacted}
@@ -331,7 +334,7 @@ export default function AddService() {
                     </div>
                   </Form.Group>
                   <Button variant="primary" type="submit">
-                    Submit
+                    Patvirtinti
                   </Button>
                 </Form>
               )}

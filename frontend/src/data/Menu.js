@@ -24,12 +24,12 @@ const dashboardMenu = [
 const applicationsMenu = [
   {
     label: "Registruoti naują",
-    link: "/apps/chat",
+    link: "/add-service",
     icon: "ri-question-answer-line",
   },
   {
     label: "Parduoti",
-    link: "/apps/chat",
+    link: "/services/archive",
     icon: "ri-question-answer-line",
   },
   {

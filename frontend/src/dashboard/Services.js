@@ -13,7 +13,6 @@ import {
   Modal,
   Button,
 } from "react-bootstrap";
-import socketIOClient from "socket.io-client";
 
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import axios from "axios";
@@ -83,19 +82,6 @@ export default function Services() {
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
-
-  useEffect(() => {
-    const socket = socketIOClient("http://localhost:4050");
-    socket.on("newComment", (newComment) => {
-      // Handle the new comment notification
-      console.log("New Comment:", newComment);
-      // You can update your UI or show a notification to the user
-    });
-
-    return () => {
-      socket.disconnect(); // Clean up the socket connection when the component unmounts
-    };
-  }, []);
 
   return (
     <React.Fragment>

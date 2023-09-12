@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
+import Chat from "../apps/Chat";
 import {
   Card,
   Nav,
@@ -12,13 +13,12 @@ import {
   Modal,
   Button,
 } from "react-bootstrap";
+import socketIOClient from "socket.io-client";
 
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import axios from "axios";
 
 export default function Services() {
-  // const filterId = window.location.pathname.split("/").pop();
-
   const { filter } = useParams();
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
@@ -84,6 +84,19 @@ export default function Services() {
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
+  useEffect(() => {
+    const socket = socketIOClient("http://localhost:4050");
+    socket.on("newComment", (newComment) => {
+      // Handle the new comment notification
+      console.log("New Comment:", newComment);
+      // You can update your UI or show a notification to the user
+    });
+
+    return () => {
+      socket.disconnect(); // Clean up the socket connection when the component unmounts
+    };
+  }, []);
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -124,11 +137,18 @@ export default function Services() {
           Launch demo modal
         </Button>
 
-        <Modal show={show} onHide={handleClose}>
+        <Modal
+          show={show}
+          onHide={handleClose}
+          size="xl"
+          aria-labelledby="contained-modal-title-vcenter"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Modal heading</Modal.Title>
           </Modal.Header>
-          <Modal.Body>Woohoo, you are reading this text in a modal!</Modal.Body>
+          <Modal.Body>
+            <Chat></Chat>
+          </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
               Close

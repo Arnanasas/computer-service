@@ -44,12 +44,19 @@
     "react-router-dom": "^6.7.0",
     "react-scripts": "^5.0.1",
     "react-select": "^5.7.0",
+    "socket.io-client": "^4.7.2",
     "web-vitals": "^2.1.4",
     "yup": "^1.2.0"
   },
+  "size-limit": [
+    {
+      "path": "src/app.js"
+    }
+  ],
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "size": "npm run build && size-limit",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -72,8 +79,10 @@
     ]
   },
   "devDependencies": {
+    "@size-limit/file": "^9.0.0",
     "@types/leaflet": "^1.9.0",
     "babel-plugin-prismjs": "^2.1.0",
-    "sass": "^1.57.1"
+    "sass": "^1.57.1",
+    "size-limit": "^9.0.0"
   }
 }

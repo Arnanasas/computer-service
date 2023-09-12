@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
   const [loaded, setLoaded] = useState(false);
   const [initLoaded, setInitLoaded] = useState(false);
 
-  const login = async (nickname) => {
+  const login = async () => {
     setLoaded(false);
     try {
       const response = await axios.get(

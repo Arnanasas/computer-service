@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Card, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 export default function Signin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,13 +24,17 @@ export default function Signin() {
           withCredentials: true,
         }
       );
-      console.log("Login successful:", response.data);
-      login(response.data);
-      navigate("/services/all");
+      login();
     } catch (error) {
       console.error("Login failed:", error);
     }
   };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/services/all");
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="page-sign">

@@ -7,7 +7,7 @@ import AddService from "../dashboard/AddService";
 import Services from "../dashboard/Services";
 
 const protectedRoutes = [
-  { path: "/", element: <AddService /> },
+  { path: "/", element: <Services /> },
   { path: "/add-service", element: <AddService /> },
   { path: "apps/chat", element: <Chat /> },
 ];

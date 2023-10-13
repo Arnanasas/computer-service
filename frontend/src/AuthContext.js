@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
+import { Navigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
@@ -35,6 +36,7 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setIsAuthenticated(false);
     setNickname("");
+    <Navigate to="/login" />;
   };
 
   useEffect(() => {

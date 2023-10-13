@@ -22,7 +22,7 @@ import io from "socket.io-client";
 const socket = io("http://localhost:4050");
 
 export default function Services() {
-  const { filter } = useParams();
+  const { filter = "all" } = useParams();
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
   const [data, setData] = useState([]);
@@ -93,6 +93,7 @@ export default function Services() {
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
+        logout();
       });
   }, [filter]);
 

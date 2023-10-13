@@ -168,7 +168,7 @@ export default function AddService() {
                           onChange={handleChange}
                           isInvalid={!!errors.name}
                           isValid={touched.name && !errors.name}
-                          tabindex="2"
+                          tabIndex="2"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.name}
@@ -187,7 +187,7 @@ export default function AddService() {
                           onChange={handleChange}
                           isInvalid={!!errors.number}
                           isValid={touched.number && !errors.number}
-                          tabindex="1"
+                          tabIndex="1"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.number}
@@ -206,7 +206,7 @@ export default function AddService() {
                           onChange={handleChange}
                           isInvalid={!!errors.deviceModel}
                           isValid={touched.deviceModel && !errors.deviceModel}
-                          tabindex="3"
+                          tabIndex="3"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.deviceModel}
@@ -228,7 +228,7 @@ export default function AddService() {
                           onChange={handleChange}
                           isInvalid={!!errors.deviceSerial}
                           isValid={touched.deviceSerial && !errors.deviceSerial}
-                          tabindex="4"
+                          tabIndex="4"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.deviceSerial}
@@ -249,7 +249,7 @@ export default function AddService() {
                           isValid={
                             touched.devicePassword && !errors.devicePassword
                           }
-                          tabindex="6"
+                          tabIndex="6"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.devicePassword}
@@ -267,7 +267,7 @@ export default function AddService() {
                           onChange={handleChange}
                           isInvalid={!!errors.failure}
                           isValid={touched.failure && !errors.failure}
-                          tabindex="5"
+                          tabIndex="5"
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.failure}
@@ -282,7 +282,7 @@ export default function AddService() {
                           value={values.status}
                           onChange={handleChange}
                           isValid={touched.status && !errors.status}
-                          tabindex="8"
+                          tabIndex="8"
                         >
                           <option>Taisoma vietoje</option>
                           <option>Neišsiųsta</option>
@@ -306,7 +306,7 @@ export default function AddService() {
                             onChange={handleChange}
                             isInvalid={!!errors.price}
                             isValid={touched.price && !errors.price}
-                            tabindex="9"
+                            tabIndex="9"
                           />
                           <Form.Control.Feedback type="invalid">
                             {errors.price}
@@ -325,7 +325,7 @@ export default function AddService() {
                         value={values.hasCharger}
                         onChange={handleChange}
                         isValid={touched.hasCharger && !errors.hasCharger}
-                        tabindex="10"
+                        tabIndex="10"
                       />
                     </div>
                   </Form.Group>
@@ -339,11 +339,11 @@ export default function AddService() {
                         value={values.isContacted}
                         onChange={handleChange}
                         isValid={touched.isContacted && !errors.isContacted}
-                        tabindex="11"
+                        tabIndex="11"
                       />
                     </div>
                   </Form.Group>
-                  <Button variant="primary" type="submit" tabindex="12">
+                  <Button variant="primary" type="submit" tabIndex="12">
                     Patvirtinti
                   </Button>
                 </Form>

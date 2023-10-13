@@ -13,15 +13,33 @@ import {
   Modal,
   Button,
 } from "react-bootstrap";
+import { useAuth } from "../AuthContext";
 
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
 import axios from "axios";
+import io from "socket.io-client";
+
+const socket = io("http://localhost:4050");
 
 export default function Services() {
   const { filter } = useParams();
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
   const [data, setData] = useState([]);
+  const [selectedItemId, setSelectedItemId] = useState(null);
+
+  const { logout } = useAuth();
+
+  // Socket comment
+  useEffect(() => {
+    socket.on("receive-notification", () => {
+      alert("A user wrote a new comment!");
+    });
+
+    return () => {
+      socket.off("receive-notification");
+    };
+  }, []);
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -81,7 +99,10 @@ export default function Services() {
   const [show, setShow] = useState(false);
 
   const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
+  const handleShow = (itemId) => {
+    setShow(true);
+    setSelectedItemId(itemId);
+  };
 
   return (
     <React.Fragment>
@@ -119,10 +140,6 @@ export default function Services() {
           </Nav>
         </div>
 
-        <Button variant="primary" onClick={handleShow}>
-          Launch demo modal
-        </Button>
-
         <Modal
           show={show}
           onHide={handleClose}
@@ -130,19 +147,11 @@ export default function Services() {
           aria-labelledby="contained-modal-title-vcenter"
         >
           <Modal.Header closeButton>
-            <Modal.Title>Modal heading</Modal.Title>
+            <Modal.Title>Komentarai</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Chat></Chat>
+            <Chat itemId={selectedItemId}></Chat>
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>
-              Close
-            </Button>
-            <Button variant="primary" onClick={handleClose}>
-              Save Changes
-            </Button>
-          </Modal.Footer>
         </Modal>
 
         <Card className="card-one mt-3">
@@ -160,9 +169,7 @@ export default function Services() {
                   <th>Serijinis nr.</th>
                   <th>Gedimas</th>
                   <th>Kaina</th>
-                  {/* <th>Has Charger</th> */}
                   <th>Būsena</th>
-                  {/* <th>Contacted</th> */}
                   <th>Info</th>
                   <th>Veiksmai</th>
                 </tr>
@@ -170,7 +177,14 @@ export default function Services() {
               <tbody>
                 {data.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.id}</td>
+                    <td>
+                      <Button
+                        variant="primary"
+                        onClick={() => handleShow(item.id)}
+                      >
+                        {item.id}
+                      </Button>
+                    </td>
                     <td>{item.name}</td>
                     <td>{item.number}</td>
                     <td>{item.deviceModel}</td>

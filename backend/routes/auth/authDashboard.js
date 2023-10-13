@@ -1,6 +1,7 @@
 const User = require("../../models/User");
 const verify = require("./authVerify");
 const Service = require("../../models/Service");
+const Comment = require("../../models/Comment");
 const moment = require("moment"); // Import the moment library for date formatting
 
 const router = require("express").Router();
@@ -137,6 +138,49 @@ router.get("/me", verify, (req, res) => {
     res.json(req.user);
   } catch (error) {
     res.status(500).send(error);
+  }
+});
+
+router.post("/comment", verify, async (req, res) => {
+  try {
+    // Extract data from the request body
+    const { serviceId, comment, createdBy, isPublic } = req.body;
+
+    // Create a new comment
+    const newComment = new Comment({
+      serviceId,
+      comment,
+      createdBy,
+      isPublic,
+      seenBy: [createdBy], // The creator has obviously seen their own comment
+    });
+
+    // Save the comment to the database
+    const savedComment = await newComment.save();
+
+    const comments = await Comment.find({ serviceId: serviceId }).sort({
+      createdAt: -1,
+    }); // Sort by newest first
+    res.status(200).json(comments);
+  } catch (error) {
+    // Handle any errors
+    console.error("Error posting comment:", error); // Log the detailed error
+    res
+      .status(500)
+      .json({ error: "Failed to post the comment.", details: error.message });
+  }
+});
+
+router.get("/comments/:serviceId", verify, async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+    const comments = await Comment.find({ serviceId: serviceId }).sort({
+      createdAt: -1,
+    }); // Sort by newest first
+    res.status(200).json(comments);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ error: "Failed to fetch comments." });
   }
 });
 

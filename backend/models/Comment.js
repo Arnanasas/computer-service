@@ -6,6 +6,7 @@ const commentSchema = new mongoose.Schema(
     comment: String,
     createdBy: String,
     isPublic: Boolean,
+    seenBy: [String],
   },
   {
     timestamps: true,

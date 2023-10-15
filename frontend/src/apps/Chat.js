@@ -20,7 +20,7 @@ export default function Chat({ itemId }) {
           comment: text,
           // eslint-disable-next-line
           createdBy: nickname,
-          isPublic: true,
+          isPublic: false,
         };
 
         const response = await axios.post(
@@ -33,6 +33,7 @@ export default function Chat({ itemId }) {
         // eslint-disable-next-line
         const newComment = commentsToMessages(response.data, nickname);
         setComments(newComment);
+        setText("");
       } catch (error) {
         console.log(error);
       }
@@ -65,8 +66,10 @@ export default function Chat({ itemId }) {
           reverse: isCurrentUser,
           messages: [
             {
+              id: comment._id,
               text: comment.comment,
               time: new Date(comment.createdAt).toLocaleTimeString("lt-LT"),
+              isPublic: comment.isPublic,
             },
           ],
         };
@@ -109,6 +112,38 @@ export default function Chat({ itemId }) {
     e.target.closest(".row").classList.toggle("nav-show");
   };
 
+  async function togglePublicStatus(commentId) {
+    try {
+      const response = await axios.put(
+        `http://localhost:4050/api/dashboard/comment/${commentId}/toggle-public`,
+        "",
+        {
+          withCredentials: true,
+        }
+      );
+      if (response.data.success) {
+        // Update the comment's isPublic state in the local state.
+        // This step is important to reflect the change in the UI without refreshing the page.
+        setComments((prevComments) => {
+          return prevComments.map((dateGroup) => {
+            dateGroup.items = dateGroup.items.map((item) => {
+              item.messages = item.messages.map((message) => {
+                if (message.id === commentId) {
+                  message.isPublic = response.data.isPublic;
+                }
+                return message;
+              });
+              return item;
+            });
+            return dateGroup;
+          });
+        });
+      }
+    } catch (error) {
+      console.error("Error toggling public status:", error);
+    }
+  }
+
   return (
     <React.Fragment>
       <div className={"chat-panel"}>
@@ -136,9 +171,12 @@ export default function Chat({ itemId }) {
                         <Row key={i} className="gx-3 row-cols-auto">
                           <Col>
                             <div
-                              className="msg-bubble"
+                              className={`msg-bubble ${
+                                message.isPublic ? "bg-success" : ""
+                              }`}
                               onMouseOver={navToggle}
                               onMouseLeave={navToggle}
+                              onClick={() => togglePublicStatus(message.id)}
                             >
                               {message.text}
                               <span>{message.time}</span>

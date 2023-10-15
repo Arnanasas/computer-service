@@ -171,6 +171,27 @@ router.post("/comment", verify, async (req, res) => {
   }
 });
 
+// routes/dashboard.js or wherever you've defined your routes
+
+router.put("/comment/:id/toggle-public", verify, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.id);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    // Toggle the isPublic field
+    comment.isPublic = !comment.isPublic;
+    await comment.save();
+
+    res.json({ success: true, isPublic: comment.isPublic });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
 router.get("/comments/:serviceId", verify, async (req, res) => {
   try {
     const { serviceId } = req.params;

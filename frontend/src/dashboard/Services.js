@@ -19,7 +19,7 @@ import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; //
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:4050");
+const socket = io(`${process.env.REACT_APP_SOCKET}`);
 
 export default function Services() {
   const { filter = "all" } = useParams();
@@ -63,7 +63,7 @@ export default function Services() {
 
   const handleDelete = (serviceId) => {
     axios
-      .delete(`http://localhost:4050/api/dashboard/services/${serviceId}`, {
+      .delete(`${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -85,7 +85,7 @@ export default function Services() {
   useEffect(() => {
     // Fetch data from the API using Axios
     axios
-      .get(`http://localhost:4050/api/dashboard/services/${filter}`, {
+      .get(`${process.env.REACT_APP_URL}/dashboard/services/${filter}`, {
         withCredentials: true,
       })
       .then((response) => {

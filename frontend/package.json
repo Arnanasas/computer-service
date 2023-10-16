@@ -20,6 +20,7 @@
     "chart.js": "^4.2.0",
     "cryptofont": "^0.1.1",
     "dompurify": "^2.4.3",
+    "dotenv": "^16.3.1",
     "feather-icons": "^4.29.0",
     "formik": "^2.4.3",
     "gridjs": "^6.0.6",

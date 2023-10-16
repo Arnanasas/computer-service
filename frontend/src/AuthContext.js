@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
     setLoaded(false);
     try {
       const response = await axios.get(
-        "http://localhost:4050/api/dashboard/me",
+        `${process.env.REACT_APP_URL}/dashboard/me`,
         {
           withCredentials: true,
         }

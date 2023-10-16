@@ -83,7 +83,7 @@ export default function EditService() {
     console.log(serviceId);
     // Fetch service data when component mounts
     axios
-      .get(`http://localhost:4050/api/dashboard/service/${serviceId}`, {
+      .get(`${process.env.REACT_APP_URL}/dashboard/service/${serviceId}`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -141,7 +141,7 @@ export default function EditService() {
                 console.log(values);
                 try {
                   const response = await axios.put(
-                    `http://localhost:4050/api/dashboard/services/${serviceId}`,
+                    `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
                     values,
                     {
                       withCredentials: true,

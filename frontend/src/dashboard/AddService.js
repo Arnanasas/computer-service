@@ -114,7 +114,7 @@ export default function AddService() {
                 console.log(values);
                 try {
                   const response = await axios.post(
-                    "http://localhost:4050/api/dashboard/services",
+                    `${process.env.REACT_APP_URL}/dashboard/services`,
                     values,
                     {
                       withCredentials: true,

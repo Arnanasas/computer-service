@@ -122,8 +122,6 @@ export default function Chat({ itemId }) {
         }
       );
       if (response.data.success) {
-        // Update the comment's isPublic state in the local state.
-        // This step is important to reflect the change in the UI without refreshing the page.
         setComments((prevComments) => {
           return prevComments.map((dateGroup) => {
             dateGroup.items = dateGroup.items.map((item) => {

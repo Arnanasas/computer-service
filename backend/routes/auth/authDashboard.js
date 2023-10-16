@@ -205,4 +205,31 @@ router.get("/comments/:serviceId", verify, async (req, res) => {
   }
 });
 
+router.get("/serviceInfo", async (req, res) => {
+  try {
+    const { serviceId } = req.body;
+
+    if (!serviceId) {
+      return res.status(400).json({ message: "serviceId is required." });
+    }
+
+    const service = await Service.findOne({ id: serviceId });
+    if (!service) {
+      return res.status(404).json({ message: "Service not found." });
+    }
+
+    const publicComments = await Comment.find({
+      serviceId: serviceId,
+      isPublic: true,
+    });
+
+    return res.status(200).json({
+      service: service,
+      comments: publicComments,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
 module.exports = router;

@@ -11,7 +11,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [20.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -29,22 +29,22 @@ jobs:
     # Deploy
     - name: Deploy to server
       run: |
-        ssh ubuntu@your_server_ip <<EOF
-          cd /path/to/your/server/folder
+        ssh root@91.211.247.199 <<EOF
+          cd /home
 
           # Pull the latest changes
           git pull origin main
 
           # Install, build and restart Backend
-          cd backend
+          cd computer-service/backend
           npm install
-          pm2 restart backend-app-name
+          pm2 restart 0
 
           # Install, build and restart Frontend
           cd ../frontend
           npm install
           npm run build
-          pm2 restart frontend-app-name
+          pm2 restart 1
         EOF
 
 

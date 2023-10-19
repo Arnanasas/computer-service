@@ -42,7 +42,7 @@ jobs:
             git pull origin main
 
             # Install, build and restart Backend
-            cd computer-service/backend
+            cd backend
             npm install
             pm2 restart 0
 

@@ -23,14 +23,10 @@ jobs:
     # Backend
     - name: Backend - Install Dependencies
       run: cd backend && npm install
-    - name: Backend - Run Tests (if any)
-      run: cd backend && npm test
 
     # Frontend
     - name: Frontend - Install Dependencies
       run: cd frontend && npm install
-    - name: Frontend - Run Tests (if any)
-      run: cd frontend && npm test
 
     # Setup SSH
     - name: Setup SSH

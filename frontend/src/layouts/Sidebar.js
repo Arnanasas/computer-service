@@ -19,7 +19,7 @@ class Sidebar extends Component {
       <div className="sidebar">
         <div className="sidebar-header">
           <Link to="/" className="sidebar-logo">
-            fixme
+            it112
           </Link>
         </div>
         <PerfectScrollbar

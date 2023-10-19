@@ -11,7 +11,7 @@ export default function NotFound() {
       <div className="header">
         <Container>
           <Link to="/" className="header-logo">
-            fixme
+            it112
           </Link>
           <Nav className="nav-icon">
             <Nav.Link href="">

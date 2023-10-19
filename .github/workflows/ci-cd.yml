@@ -22,7 +22,10 @@ jobs:
 
       - name: Setup SSH known_hosts
         run: |
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
           echo "91.211.247.199 $(ssh-keyscan -H 91.211.247.199)" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       # Setup SSH
       - name: Setup SSH

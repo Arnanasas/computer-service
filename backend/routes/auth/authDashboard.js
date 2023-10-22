@@ -6,15 +6,6 @@ const moment = require("moment"); // Import the moment library for date formatti
 
 const router = require("express").Router();
 
-router.get("/allusers", verify, async (req, res) => {
-  try {
-    const results = await User.find().exec();
-    res.send(results);
-  } catch (error) {
-    res.status(500).send(error);
-  }
-});
-
 router.get("/services/:filter", verify, async (req, res) => {
   try {
     const filter = req.params.filter;
@@ -207,7 +198,7 @@ router.get("/comments/:serviceId", verify, async (req, res) => {
 
 router.get("/serviceInfo", async (req, res) => {
   try {
-    const { serviceId } = req.body;
+    const { serviceId } = req.query;
 
     if (!serviceId) {
       return res.status(400).json({ message: "serviceId is required." });

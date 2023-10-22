@@ -207,7 +207,7 @@ router.get("/comments/:serviceId", verify, async (req, res) => {
 
 router.get("/serviceInfo", async (req, res) => {
   try {
-    const { serviceId } = req.body;
+    const { serviceId } = req.query.serviceId;
 
     if (!serviceId) {
       return res.status(400).json({ message: "serviceId is required." });

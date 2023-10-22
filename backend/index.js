@@ -32,7 +32,7 @@ const app = express();
 app.use(
   express.json(),
   cors({
-    origin: "http://localhost:3000", // Replace with your frontend's URL
+    origin: "https://admin.it112.lt", // Replace with your frontend's URL
     credentials: true, // Allow credentials (cookies)
   })
 );
@@ -45,7 +45,7 @@ app.use("/api/dashboard", authDashboard);
 const server = http.createServer(app); // Create an HTTP server instance
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "https://admin.it112.lt",
     credentials: true,
   },
 });

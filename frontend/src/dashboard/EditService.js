@@ -16,6 +16,8 @@ import {
 import * as yup from "yup";
 import * as formik from "formik";
 import { useNavigate } from "react-router-dom";
+import { PDFViewer } from "@react-pdf/renderer";
+import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 
 export default function EditService() {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ export default function EditService() {
     status: "",
     isContacted: false,
   });
+  const [isAcceptanceActShown, setIsAcceptanceActShown] = useState(false);
 
   const { Formik } = formik;
 
@@ -80,7 +83,6 @@ export default function EditService() {
   }, [skin]);
 
   useEffect(() => {
-    console.log(serviceId);
     // Fetch service data when component mounts
     axios
       .get(`${process.env.REACT_APP_URL}/dashboard/service/${serviceId}`, {
@@ -94,6 +96,15 @@ export default function EditService() {
       });
   }, [serviceId]);
 
+  const getAcceptanceAct = () => {
+    setIsAcceptanceActShown(true);
+
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe");
+      iframe.contentWindow.print();
+    }, 200);
+  };
+  console.log(Formik);
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -170,202 +181,224 @@ export default function EditService() {
               enableReinitialize={true}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
-                <Form onSubmit={handleSubmit}>
-                  <Row>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="id">ID</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="id"
-                          name="id"
-                          value={values.id}
-                          onChange={handleChange}
-                          isValid={touched.id && !errors.id}
-                          readOnly
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label htmlFor="name">Vardas</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="name"
-                          name="name"
-                          value={values.name}
-                          onChange={handleChange}
-                          isInvalid={!!errors.name}
-                          isValid={touched.name && !errors.name}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.name}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="number">Tel. Nr.</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="number"
-                          name="number"
-                          value={values.number}
-                          onChange={handleChange}
-                          isInvalid={!!errors.number}
-                          isValid={touched.number && !errors.number}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.number}
-                        </Form.Control.Feedback>
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label htmlFor="deviceModel">
-                          Įrenginio modelis
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="deviceModel"
-                          name="deviceModel"
-                          value={values.deviceModel}
-                          onChange={handleChange}
-                          isInvalid={!!errors.deviceModel}
-                          isValid={touched.deviceModel && !errors.deviceModel}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.deviceModel}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="deviceSerial">
-                          Įrenginio serijinis kodas
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="deviceSerial"
-                          name="deviceSerial"
-                          value={values.deviceSerial}
-                          onChange={handleChange}
-                          isInvalid={!!errors.deviceSerial}
-                          isValid={touched.deviceSerial && !errors.deviceSerial}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.deviceSerial}
-                        </Form.Control.Feedback>
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label htmlFor="devicePassword">
-                          Slaptažodis
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="devicePassword"
-                          name="devicePassword"
-                          value={values.devicePassword}
-                          onChange={handleChange}
-                          isInvalid={!!errors.devicePassword}
-                          isValid={
-                            touched.devicePassword && !errors.devicePassword
-                          }
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.devicePassword}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="failure">Gedimas</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="failure"
-                          name="failure"
-                          value={values.failure}
-                          onChange={handleChange}
-                          isInvalid={!!errors.failure}
-                          isValid={touched.failure && !errors.failure}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.failure}
-                        </Form.Control.Feedback>
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label>Būsena</Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="status"
-                          value={values.status}
-                          onChange={handleChange}
-                          isValid={touched.status && !errors.status}
-                        >
-                          <option>Taisoma vietoje</option>
-                          <option>Neišsiųsta</option>
-                          <option>Taisoma kitur</option>
-                          <option>Laukiama klientų</option>
-                          <option>Atsiskaityta</option>
-                        </Form.Control>
-                      </div>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group>
+                <>
+                  <Form onSubmit={handleSubmit}>
+                    <Row>
+                      <Col md={6}>
                         <div className="mb-3">
-                          <Form.Label htmlFor="price">Kaina</Form.Label>
+                          <Form.Label htmlFor="id">ID</Form.Label>
                           <Form.Control
                             type="text"
-                            id="price"
-                            name="price"
-                            value={values.price}
+                            id="id"
+                            name="id"
+                            value={values.id}
                             onChange={handleChange}
-                            isInvalid={!!errors.price}
-                            isValid={touched.price && !errors.price}
+                            isValid={touched.id && !errors.id}
+                            readOnly
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label htmlFor="name">Vardas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="name"
+                            name="name"
+                            value={values.name}
+                            onChange={handleChange}
+                            isInvalid={!!errors.name}
+                            isValid={touched.name && !errors.name}
                           />
                           <Form.Control.Feedback type="invalid">
-                            {errors.price}
+                            {errors.name}
                           </Form.Control.Feedback>
                         </div>
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  <Form.Group controlId="hasCharger">
-                    <div className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        label="Pakrovėjas?"
-                        id="hasCharger"
-                        name="hasCharger"
-                        checked={values.hasCharger} // Use checked instead of value
-                        onChange={(e) => handleChange(e, "hasCharger")}
-                        isValid={touched.hasCharger && !errors.hasCharger}
+                      </Col>
+
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="number">Tel. Nr.</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="number"
+                            name="number"
+                            value={values.number}
+                            onChange={handleChange}
+                            isInvalid={!!errors.number}
+                            isValid={touched.number && !errors.number}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.number}
+                          </Form.Control.Feedback>
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label htmlFor="deviceModel">
+                            Įrenginio modelis
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="deviceModel"
+                            name="deviceModel"
+                            value={values.deviceModel}
+                            onChange={handleChange}
+                            isInvalid={!!errors.deviceModel}
+                            isValid={touched.deviceModel && !errors.deviceModel}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.deviceModel}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="deviceSerial">
+                            Įrenginio serijinis kodas
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="deviceSerial"
+                            name="deviceSerial"
+                            value={values.deviceSerial}
+                            onChange={handleChange}
+                            isInvalid={!!errors.deviceSerial}
+                            isValid={
+                              touched.deviceSerial && !errors.deviceSerial
+                            }
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.deviceSerial}
+                          </Form.Control.Feedback>
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label htmlFor="devicePassword">
+                            Slaptažodis
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="devicePassword"
+                            name="devicePassword"
+                            value={values.devicePassword}
+                            onChange={handleChange}
+                            isInvalid={!!errors.devicePassword}
+                            isValid={
+                              touched.devicePassword && !errors.devicePassword
+                            }
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.devicePassword}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="failure">Gedimas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="failure"
+                            name="failure"
+                            value={values.failure}
+                            onChange={handleChange}
+                            isInvalid={!!errors.failure}
+                            isValid={touched.failure && !errors.failure}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.failure}
+                          </Form.Control.Feedback>
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label>Būsena</Form.Label>
+                          <Form.Control
+                            as="select"
+                            name="status"
+                            value={values.status}
+                            onChange={handleChange}
+                            isValid={touched.status && !errors.status}
+                          >
+                            <option>Taisoma vietoje</option>
+                            <option>Neišsiųsta</option>
+                            <option>Taisoma kitur</option>
+                            <option>Laukiama klientų</option>
+                            <option>Atsiskaityta</option>
+                          </Form.Control>
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group>
+                          <div className="mb-3">
+                            <Form.Label htmlFor="price">Kaina</Form.Label>
+                            <Form.Control
+                              type="text"
+                              id="price"
+                              name="price"
+                              value={values.price}
+                              onChange={handleChange}
+                              isInvalid={!!errors.price}
+                              isValid={touched.price && !errors.price}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                              {errors.price}
+                            </Form.Control.Feedback>
+                          </div>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                    <Form.Group controlId="hasCharger">
+                      <div className="mb-3">
+                        <Form.Check
+                          type="switch"
+                          label="Pakrovėjas?"
+                          id="hasCharger"
+                          name="hasCharger"
+                          checked={values.hasCharger} // Use checked instead of value
+                          onChange={(e) => handleChange(e, "hasCharger")}
+                          isValid={touched.hasCharger && !errors.hasCharger}
+                        />
+                      </div>
+                    </Form.Group>
+                    <Form.Group controlId="isContacted">
+                      <div className="mb-3">
+                        <Form.Check
+                          type="switch"
+                          label="Susisiekta?"
+                          id="isContacted"
+                          name="isContacted"
+                          checked={values.isContacted} // Use checked instead of value
+                          onChange={(e) => handleChange(e, "isContacted")}
+                          isValid={touched.isContacted && !errors.isContacted}
+                        />
+                      </div>
+                    </Form.Group>
+                    <Button variant="primary" type="submit">
+                      Patvirtinti
+                    </Button>
+                    <Button
+                      onClick={getAcceptanceAct}
+                      variant="secondary"
+                      type="button"
+                    >
+                      Priėmimo kvitas
+                    </Button>
+                  </Form>
+
+                  {isAcceptanceActShown && (
+                    <PDFViewer className="d-none">
+                      <AcceptanceActDocument
+                        repairNumber={serviceId}
+                        name={values.name}
+                        phoneNumber={values.number}
+                        failure={values.failure}
+                        hasCharger={values.hasCharger}
                       />
-                    </div>
-                  </Form.Group>
-                  <Form.Group controlId="isContacted">
-                    <div className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        label="Susisiekta?"
-                        id="isContacted"
-                        name="isContacted"
-                        checked={values.isContacted} // Use checked instead of value
-                        onChange={(e) => handleChange(e, "isContacted")}
-                        isValid={touched.isContacted && !errors.isContacted}
-                      />
-                    </div>
-                  </Form.Group>
-                  <Button variant="primary" type="submit">
-                    Patvirtinti
-                  </Button>
-                  {/* <Button onClick={console.log(errors)}>asd</Button> */}
-                </Form>
+                    </PDFViewer>
+                  )}
+                </>
               )}
             </Formik>
           </Card.Body>

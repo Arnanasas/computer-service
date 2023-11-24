@@ -145,7 +145,7 @@ const AcceptanceActBlock = ({
         Užsakovas parašu žemiau patvirtina, kad sutinka su remonto sąlygomis ir
         kad visa programinė įranga kietajame diske ar kitose duomenų laikmenose
         priklauso jam. Todėl už programinės įrangos legalumą atsako užsakovas.
-        UAB „IT112“ neatsako už jokių duomenų pateiktoje įrangoje išsaugojimą,
+        MB „IT112“ neatsako už jokių duomenų pateiktoje įrangoje išsaugojimą,
         išskyrus nurodytus atvejus šiame akte. Užsakovui patvirtinus įrangos
         remonto darbus ir vėliau atsisakius tęsti remontą, turi kompensuoti
         sunaudoto laiko bei detalių kaštus. Sutaisyta ar nesutaisyta įranga
@@ -164,6 +164,7 @@ const AcceptanceActBlock = ({
 
     <View style={[styles.flex, styles.marginBottom1]}>
       <Text style={[styles.fontBold]}>Kalvarijų g. 2</Text>
+      <Text style={[styles.fontBold, styles.marginLeft4]}>+370 658 04435</Text>
       <Text style={[styles.fontBold, styles.marginLeft4]}>www.it112.lt</Text>
     </View>
   </View>

@@ -37,10 +37,10 @@ const styles = StyleSheet.create({
     width: "40px",
   },
   marginBottom1: {
-    marginBottom: 10,
+    marginBottom: 7,
   },
   marginBottom2: {
-    marginBottom: 25,
+    marginBottom: 20,
   },
   marginLeft4: {
     marginLeft: 120,

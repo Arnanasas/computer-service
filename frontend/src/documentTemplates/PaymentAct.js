@@ -122,7 +122,7 @@ const PaymentActDocument = ({
         <Image src={require("../assets/img/logo.png")} style={styles.logo} />
 
         <Text style={styles.fontBold}>Paslaugos tiekėjas:</Text>
-        <Text style={styles.fontBold}>Kompiuterių taisykla PELĖ</Text>
+        <Text style={styles.fontBold}>Kompiuterių taisykla MB „IT112“</Text>
         <Text>MB „IT112“, įm. k. 306561580</Text>
         <Text>Reg. adresas: Kalvarijų g. 2, Vilnius</Text>
         <Text>Adresas: Kalvarijų g. 2, Vilnius</Text>

@@ -206,7 +206,7 @@ router.get("/serviceInfo", async (req, res) => {
 
     const service = await Service.findOne({ id: serviceId });
     if (!service) {
-      return res.status(404).json({ message: "Service not found." });
+      return res.status(404).json({ message: "Paslauga nerasta." });
     }
 
     const publicComments = await Comment.find({

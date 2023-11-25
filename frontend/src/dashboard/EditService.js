@@ -12,12 +12,15 @@ import {
   Row,
   Tooltip,
   Form,
+  Modal,
 } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
 import { useNavigate } from "react-router-dom";
 import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
+import PaymentActDocument from "../documentTemplates/PaymentAct";
+import { useAuth } from "../AuthContext";
 
 export default function EditService() {
   const navigate = useNavigate();
@@ -36,6 +39,8 @@ export default function EditService() {
     isContacted: false,
   });
   const [isAcceptanceActShown, setIsAcceptanceActShown] = useState(false);
+  const [isPaymentActShown, setIsPaymentActShown] = useState(false);
+  const [isPaymentModalShown, setIsPaymentModalShown] = useState(false);
 
   const { Formik } = formik;
 
@@ -100,11 +105,24 @@ export default function EditService() {
     setIsAcceptanceActShown(true);
 
     setTimeout(() => {
-      const iframe = document.querySelector("iframe");
+      const iframe = document.querySelector("iframe.acceptance-act");
       iframe.contentWindow.print();
     }, 200);
   };
-  console.log(Formik);
+
+  const getPaymentAct = () => {
+    setIsPaymentModalShown(true);
+  };
+
+  const printPaymentAct = () => {
+    setIsPaymentActShown(true);
+
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe.payment-act");
+      iframe.contentWindow.print();
+    }, 200);
+  };
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -385,10 +403,17 @@ export default function EditService() {
                     >
                       Priėmimo kvitas
                     </Button>
+                    <Button
+                      onClick={getPaymentAct}
+                      variant="secondary"
+                      type="button"
+                    >
+                      Mokėjimo kvitas
+                    </Button>
                   </Form>
 
                   {isAcceptanceActShown && (
-                    <PDFViewer className="d-none">
+                    <PDFViewer className="acceptance-act d-none">
                       <AcceptanceActDocument
                         repairNumber={serviceId}
                         name={values.name}
@@ -406,6 +431,212 @@ export default function EditService() {
 
         <Footer />
       </div>
+
+      <Modal
+        className="modal-event"
+        show={isPaymentModalShown}
+        onHide={() => setIsPaymentModalShown(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Mokėjimo informacija</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Formik
+            onSubmit={async (values) => {
+              try {
+                const response = await axios.put(
+                  `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+                  values,
+                  {
+                    withCredentials: true,
+                  }
+                );
+
+                setData((data) => ({ ...data, ...values, ...response.data }));
+                printPaymentAct();
+              } catch (error) {
+                console.log(error);
+              }
+            }}
+            //   on
+            initialValues={{
+              id: data.id || "", // Ensure these values are strings
+              paidDate:
+                new Date(data.paidDate).toLocaleDateString("lt-LT") ||
+                new Date().toLocaleDateString("lt-LT"),
+              clientType: data.clientType || "privatus",
+              paymentMethod: data.paymentMethod || "kortele",
+              companyCode: data.companyCode || "",
+              pvmCode: data.pvmCode || "",
+              address: data.address || "",
+              email: data.email || "",
+              price: data.price,
+              failure: data.failure,
+            }}
+            enableReinitialize={true}
+          >
+            {({ handleSubmit, handleChange, values, touched, errors }) => (
+              <>
+                <Form onSubmit={handleSubmit}>
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Form.Label htmlFor="paidDate">
+                          Mokėjimo data
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="paidDate"
+                          placeholder="Paid date"
+                          value={values.paidDate}
+                          onChange={handleChange}
+                          isValid={touched.paidDate && !errors.paidDate}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.paidDate}
+                        </Form.Control.Feedback>
+                      </div>
+
+                      <div className="mb-3">
+                        <Form.Label htmlFor="clientType">
+                          Kliento tipas
+                        </Form.Label>
+                        <Form.Select
+                          id="clientType"
+                          name="clientType"
+                          value={values.clientType}
+                          onChange={handleChange}
+                        >
+                          <option value="privatus">Privatus</option>
+                          <option value="juridinis">Juridinis</option>
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                          {errors.clientType}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Col>
+
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Form.Label htmlFor="paymentMethod">
+                          Mokėjimo būdas
+                        </Form.Label>
+                        <Form.Select
+                          id="paymentMethod"
+                          name="paymentMethod"
+                          value={values.paymentMethod}
+                          onChange={handleChange}
+                        >
+                          <option value="kortele">Kortelė</option>
+                          <option value="grynais">Grynais</option>
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                          {errors.paymentMethod}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Col>
+                  </Row>
+
+                  {values.clientType !== "privatus" && (
+                    <Row>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="companyCode">
+                            Įmonės kodas
+                          </Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="companyCode"
+                            name="companyCode"
+                            value={values.companyCode}
+                            onChange={handleChange}
+                            isInvalid={!!errors.companyCode}
+                            isValid={touched.companyCode && !errors.companyCode}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.companyCode}
+                          </Form.Control.Feedback>
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label htmlFor="address">Adresas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="address"
+                            name="address"
+                            value={values.address}
+                            onChange={handleChange}
+                            isInvalid={!!errors.address}
+                            isValid={touched.address && !errors.address}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.address}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="email">El. paštas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="email"
+                            name="email"
+                            value={values.email}
+                            onChange={handleChange}
+                            isInvalid={!!errors.email}
+                            isValid={touched.email && !errors.email}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.email}
+                          </Form.Control.Feedback>
+                        </div>
+
+                        <div className="mb-3">
+                          <Form.Label htmlFor="pvmCode">PVM kodas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="pvmCode"
+                            name="pvmCode"
+                            value={values.pvmCode}
+                            onChange={handleChange}
+                            isInvalid={!!errors.pvmCode}
+                            isValid={touched.pvmCode && !errors.pvmCode}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.pvmCode}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
+                    </Row>
+                  )}
+
+                  <Button variant="primary" type="submit">
+                    Išsaugoti ir spausdinti
+                  </Button>
+                </Form>
+
+                {isPaymentActShown && (
+                  <PDFViewer className="payment-act d-none">
+                    <PaymentActDocument
+                      price={values.price}
+                      paymentMethod={values.paymentMethod}
+                      paymentId={values.paymentId}
+                      clientType={values.clientType}
+                      paidDate={values.paidDate}
+                      companyCode={values.companyCode}
+                      pvmCode={values.pvmCode}
+                      address={values.address}
+                      email={values.email}
+                      failure={values.failure}
+                    />
+                  </PDFViewer>
+                )}
+              </>
+            )}
+          </Formik>
+        </Modal.Body>
+      </Modal>
     </React.Fragment>
   );
 }

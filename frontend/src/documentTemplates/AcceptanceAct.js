@@ -2,6 +2,7 @@ import ReactDOM from "react-dom";
 import {
   Document,
   Page,
+  Image,
   Text,
   View,
   Font,
@@ -24,13 +25,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 25,
     fontFamily: "Roboto",
-    fontSize: 12,
+    fontSize: 11,
   },
   fontBold: {
     fontFamily: "Roboto-Medium",
   },
   textCenter: {
     textAlign: "center",
+  },
+  logo: {
+    width: "40px",
   },
   marginBottom1: {
     marginBottom: 10,
@@ -44,13 +48,25 @@ const styles = StyleSheet.create({
   flex: {
     flexDirection: "row",
   },
+  justifyBetween: {
+    justifyContent: "space-between",
+  },
   horizontalLine: {
-    backgroundColor: "black",
     width: "100%",
-    height: 1,
+    height: 0,
+    borderBottom: "2px dashed gray",
   },
   section: {
     marginVertical: 10,
+  },
+  relative: {
+    position: "relative",
+  },
+  absoluteHorizontalCenter: {
+    position: "absolute",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "100%",
   },
   table: {
     display: "table",
@@ -88,10 +104,8 @@ const AcceptanceActBlock = ({
   hasCharger,
 }) => (
   <View>
-    <View style={[styles.section, styles.marginBottom1]}>
-      <Text style={[styles.fontBold, styles.textCenter]}>
-        Remonto numeris: {repairNumber}
-      </Text>
+    <View style={[styles.section]}>
+      <Image src={require("../assets/img/logo.png")} style={styles.logo} />
     </View>
 
     <View style={styles.section}>
@@ -137,6 +151,16 @@ const AcceptanceActBlock = ({
             <Text style={[styles.cell, styles.textCenter]}>{failure}</Text>
           </View>
         </View>
+
+        {/* Row 5 */}
+        <View style={styles.tableRow}>
+          <View style={styles.tableCol}>
+            <Text style={styles.cell}>Remonto numeris</Text>
+          </View>
+          <View style={styles.tableCol}>
+            <Text style={[styles.cell, styles.textCenter]}>{repairNumber}</Text>
+          </View>
+        </View>
       </View>
     </View>
 
@@ -145,13 +169,14 @@ const AcceptanceActBlock = ({
         Užsakovas parašu žemiau patvirtina, kad sutinka su remonto sąlygomis ir
         kad visa programinė įranga kietajame diske ar kitose duomenų laikmenose
         priklauso jam. Todėl už programinės įrangos legalumą atsako užsakovas.
-        MB „IT112“ neatsako už jokių duomenų pateiktoje įrangoje išsaugojimą,
-        išskyrus nurodytus atvejus šiame akte. Užsakovui patvirtinus įrangos
-        remonto darbus ir vėliau atsisakius tęsti remontą, turi kompensuoti
-        sunaudoto laiko bei detalių kaštus. Sutaisyta ar nesutaisyta įranga
-        saugoma ne ilgiau kaip vieną mėnesį. Neatsiėmus įrangos laiku, įrenginio
-        tolimesniam saugojimui taikomas 1 eur per dieną mokestis. Tokiu atveju
-        įrenginys grąžinamas klientui tik sumokėjus saugojimo mokestį.
+        <Text style={styles.fontBold}> MB „IT112“</Text> neatsako už jokių
+        duomenų pateiktoje įrangoje išsaugojimą, išskyrus nurodytus atvejus
+        šiame akte. Užsakovui patvirtinus įrangos remonto darbus ir vėliau
+        atsisakius tęsti remontą, turi kompensuoti sunaudoto laiko bei detalių
+        kaštus. Sutaisyta ar nesutaisyta įranga saugoma ne ilgiau kaip vieną
+        mėnesį. Neatsiėmus įrangos laiku, įrenginio tolimesniam saugojimui
+        taikomas 1 eur per dieną mokestis. Tokiu atveju įrenginys grąžinamas
+        klientui tik sumokėjus saugojimo mokestį.
       </Text>
     </View>
 
@@ -159,13 +184,22 @@ const AcceptanceActBlock = ({
       <Text style={[styles.fontBold, styles.marginBottom1]}>
         Užsakovo parašas:
       </Text>
-      <Text style={[styles.fontBold]}>Įrangą priėmė:</Text>
+      <Text style={[styles.fontBold]}>Darbuotojo parašas:</Text>
     </View>
 
-    <View style={[styles.flex, styles.marginBottom1]}>
-      <Text style={[styles.fontBold]}>Kalvarijų g. 2</Text>
-      <Text style={[styles.fontBold, styles.marginLeft4]}>+370 658 04435</Text>
-      <Text style={[styles.fontBold, styles.marginLeft4]}>www.it112.lt</Text>
+    <View
+      style={[
+        styles.relative,
+        styles.flex,
+        styles.justifyBetween,
+        styles.marginBottom1,
+      ]}
+    >
+      <Text style={styles.fontBold}>Kalvarijų g. 2, Vilnius</Text>
+      <Text style={[styles.absoluteHorizontalCenter, styles.fontBold]}>
+        +370 658 04435
+      </Text>
+      <Text style={styles.fontBold}>www.it112.lt</Text>
     </View>
   </View>
 );

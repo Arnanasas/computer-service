@@ -462,9 +462,9 @@ export default function EditService() {
             //   on
             initialValues={{
               id: data.id || "", // Ensure these values are strings
-              paidDate:
-                new Date(data.paidDate).toLocaleDateString("lt-LT") ||
-                new Date().toLocaleDateString("lt-LT"),
+              paidDate: data.paidDate
+                ? new Date(data.paidDate).toLocaleDateString("lt-LT")
+                : new Date().toLocaleDateString("lt-LT"),
               clientType: data.clientType || "privatus",
               paymentMethod: data.paymentMethod || "kortele",
               paymentId: data.paymentId,

@@ -12,6 +12,15 @@ const serviceSchema = new mongoose.Schema({
   hasCharger: Boolean,
   status: String,
   isContacted: Boolean,
+
+  paidDate: Date,
+  paymentMethod: String,
+  paymentId: Number,
+  clientType: String,
+  companyCode: Number,
+  pvmCode: Number,
+  address: String,
+  email: String,
 });
 
 const Service = mongoose.model("Service", serviceSchema);

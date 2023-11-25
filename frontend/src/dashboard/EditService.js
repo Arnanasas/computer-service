@@ -120,7 +120,7 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.payment-act");
       iframe.contentWindow.print();
-    }, 200);
+    }, 300);
   };
 
   return (
@@ -467,6 +467,7 @@ export default function EditService() {
                 new Date().toLocaleDateString("lt-LT"),
               clientType: data.clientType || "privatus",
               paymentMethod: data.paymentMethod || "kortele",
+              paymentId: data.paymentId,
               companyCode: data.companyCode || "",
               pvmCode: data.pvmCode || "",
               address: data.address || "",

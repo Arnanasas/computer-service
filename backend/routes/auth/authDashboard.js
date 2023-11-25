@@ -69,18 +69,22 @@ router.put("/services/:id", verify, async (req, res) => {
   try {
     const serviceId = req.params.id;
 
+    const service = await Service.findOne({ id: serviceId });
+
+    const paymentId =
+      (service && service.paymentId) || (await getNewPaymentId());
+
     // Find the service by ID and update it
     const updatedService = await Service.findOneAndUpdate(
       { id: serviceId },
-      req.body, // Use the incoming data to update the service
+      { ...req.body, paymentId }, // Use the incoming data to update the service
       { new: true } // Return the updated document
     );
-
     if (!updatedService) {
       return res.status(404).json({ error: "Service not found" });
     }
 
-    res.status(200).json({ message: "Service updated successfully" });
+    res.status(200).json({ ...updatedService._doc });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -112,7 +116,9 @@ router.post("/services", verify, async (req, res) => {
       devicesFixedToday + 1
     }`;
 
-    const serviceWithId = { ...serviceData, id: customId };
+    const paymentId = await getNewPaymentId();
+
+    const serviceWithId = { ...serviceData, id: customId, paymentId };
 
     const service = new Service(serviceWithId);
     const savedService = await service.save();
@@ -224,3 +230,11 @@ router.get("/serviceInfo", async (req, res) => {
 });
 
 module.exports = router;
+
+const getNewPaymentId = async () => {
+  const highestPaymentService = await Service.findOne({})
+    .sort("-paymentId")
+    .limit(1);
+  if (!highestPaymentService) return 1;
+  return (highestPaymentService.paymentId || 0) + 1;
+};

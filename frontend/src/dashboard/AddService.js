@@ -159,7 +159,7 @@ export default function AddService() {
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label htmlFor="name">Vardas</Form.Label>
+                        <Form.Label htmlFor="name">Vardas Pavardė</Form.Label>
                         <Form.Control
                           type="text"
                           id="name"
@@ -287,7 +287,7 @@ export default function AddService() {
                           <option>Taisoma vietoje</option>
                           <option>Neišsiųsta</option>
                           <option>Taisoma kitur</option>
-                          <option>Laukiama klientų</option>
+                          <option>Sutaisyta, pranešta</option>
                           <option>Atsiskaityta</option>
                         </Form.Control>
                       </div>

@@ -22,7 +22,7 @@ router.get("/services/:filter", verify, async (req, res) => {
         query = { status: "Taisoma kitur" };
         break;
       case "waiting":
-        query = { status: "Laukiama klientų" };
+        query = { status: "Sutaisyta, pranešta" };
         break;
       case "archive":
         query = { status: "Atsiskaityta" };

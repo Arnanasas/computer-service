@@ -10,13 +10,13 @@ import {
 } from "@react-pdf/renderer";
 
 Font.register({
-  family: "Roboto",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf",
+  family: "Gabarito",
+  src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
 });
 
 Font.register({
-  family: "Roboto-Medium",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf",
+  family: "Gabarito-Medium",
+  src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
 });
 
 // Create styles
@@ -24,11 +24,11 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
     paddingHorizontal: 25,
-    fontFamily: "Roboto",
+    fontFamily: "Gabarito",
     fontSize: 11,
   },
   fontBold: {
-    fontFamily: "Roboto-Medium",
+    fontFamily: "Gabarito-Medium",
   },
   textCenter: {
     textAlign: "center",

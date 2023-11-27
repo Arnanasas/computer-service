@@ -107,7 +107,7 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.acceptance-act");
       iframe.contentWindow.print();
-    }, 200);
+    }, 400);
   };
 
   const getPaymentAct = () => {
@@ -120,7 +120,7 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.payment-act");
       iframe.contentWindow.print();
-    }, 300);
+    }, 400);
   };
 
   return (
@@ -340,7 +340,7 @@ export default function EditService() {
                             <option>Taisoma vietoje</option>
                             <option>Neišsiųsta</option>
                             <option>Taisoma kitur</option>
-                            <option>Laukiama klientų</option>
+                            <option>Sutaisyta, pranešta</option>
                             <option>Atsiskaityta</option>
                           </Form.Control>
                         </div>
@@ -447,7 +447,7 @@ export default function EditService() {
               try {
                 const response = await axios.put(
                   `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
-                  values,
+                  { ...values, status: "Atsiskaityta" },
                   {
                     withCredentials: true,
                   }
@@ -468,9 +468,11 @@ export default function EditService() {
               clientType: data.clientType || "privatus",
               paymentMethod: data.paymentMethod || "kortele",
               paymentId: data.paymentId,
+              companyName: data.companyName || "",
               companyCode: data.companyCode || "",
               pvmCode: data.pvmCode || "",
               address: data.address || "",
+              service: data.service || "Kompiuterio remontas",
               email: data.email || "",
               price: data.price,
               failure: data.failure,
@@ -536,6 +538,22 @@ export default function EditService() {
                           {errors.paymentMethod}
                         </Form.Control.Feedback>
                       </div>
+
+                      <div className="mb-3">
+                        <Form.Label htmlFor="service">Paslauga</Form.Label>
+                        <Form.Control
+                          type="text"
+                          id="service"
+                          name="service"
+                          value={values.service}
+                          onChange={handleChange}
+                          isInvalid={!!errors.service}
+                          isValid={touched.service && !errors.service}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.service}
+                        </Form.Control.Feedback>
+                      </div>
                     </Col>
                   </Row>
 
@@ -543,20 +561,20 @@ export default function EditService() {
                     <Row>
                       <Col md={6}>
                         <div className="mb-3">
-                          <Form.Label htmlFor="companyCode">
-                            Įmonės kodas
+                          <Form.Label htmlFor="companyName">
+                            Įmonės pavadinimas
                           </Form.Label>
                           <Form.Control
                             type="text"
-                            id="companyCode"
-                            name="companyCode"
-                            value={values.companyCode}
+                            id="companyName"
+                            name="companyName"
+                            value={values.companyName}
                             onChange={handleChange}
-                            isInvalid={!!errors.companyCode}
-                            isValid={touched.companyCode && !errors.companyCode}
+                            isInvalid={!!errors.companyName}
+                            isValid={touched.companyName && !errors.companyName}
                           />
                           <Form.Control.Feedback type="invalid">
-                            {errors.companyCode}
+                            {errors.companyName}
                           </Form.Control.Feedback>
                         </div>
 
@@ -578,18 +596,20 @@ export default function EditService() {
                       </Col>
                       <Col md={6}>
                         <div className="mb-3">
-                          <Form.Label htmlFor="email">El. paštas</Form.Label>
+                          <Form.Label htmlFor="companyCode">
+                            Įmonės kodas
+                          </Form.Label>
                           <Form.Control
                             type="text"
-                            id="email"
-                            name="email"
-                            value={values.email}
+                            id="companyCode"
+                            name="companyCode"
+                            value={values.companyCode}
                             onChange={handleChange}
-                            isInvalid={!!errors.email}
-                            isValid={touched.email && !errors.email}
+                            isInvalid={!!errors.companyCode}
+                            isValid={touched.companyCode && !errors.companyCode}
                           />
                           <Form.Control.Feedback type="invalid">
-                            {errors.email}
+                            {errors.companyCode}
                           </Form.Control.Feedback>
                         </div>
 
@@ -609,6 +629,24 @@ export default function EditService() {
                           </Form.Control.Feedback>
                         </div>
                       </Col>
+
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="email">El. paštas</Form.Label>
+                          <Form.Control
+                            type="text"
+                            id="email"
+                            name="email"
+                            value={values.email}
+                            onChange={handleChange}
+                            isInvalid={!!errors.email}
+                            isValid={touched.email && !errors.email}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.email}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
                     </Row>
                   )}
 
@@ -625,11 +663,12 @@ export default function EditService() {
                       paymentId={values.paymentId}
                       clientType={values.clientType}
                       paidDate={values.paidDate}
+                      companyName={values.companyName}
                       companyCode={values.companyCode}
                       pvmCode={values.pvmCode}
                       address={values.address}
                       email={values.email}
-                      failure={values.failure}
+                      service={values.service}
                     />
                   </PDFViewer>
                 )}

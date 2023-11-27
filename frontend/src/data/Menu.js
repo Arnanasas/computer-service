@@ -15,7 +15,7 @@ const dashboardMenu = [
     icon: "ri-pie-chart-2-line",
   },
   {
-    label: "Laukiama klientų",
+    label: "Sutaisyta, pranešta",
     link: "/services/waiting",
     icon: "ri-pie-chart-2-line",
   },

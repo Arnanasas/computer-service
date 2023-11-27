@@ -10,13 +10,13 @@ import {
 } from "@react-pdf/renderer";
 
 Font.register({
-  family: "Roboto",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf",
+  family: "Gabarito",
+  src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
 });
 
 Font.register({
-  family: "Roboto-Medium",
-  src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-medium-webfont.ttf",
+  family: "Gabarito-Medium",
+  src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
 });
 
 // Create styles
@@ -24,19 +24,17 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
     paddingHorizontal: 25,
-    fontFamily: "Roboto",
+    fontFamily: "Gabarito",
     fontSize: 11,
   },
   fontBold: {
-    fontFamily: "Roboto-Medium",
+    fontFamily: "Gabarito-Medium",
   },
   textCenter: {
     textAlign: "center",
   },
   logo: {
-    width: "40px",
-    position: "absolute",
-    right: 0,
+    width: "100px",
   },
   marginBottom1: {
     marginBottom: 10,
@@ -49,6 +47,9 @@ const styles = StyleSheet.create({
   },
   marginLeft4: {
     marginLeft: 120,
+  },
+  w50: {
+    width: "50%",
   },
   flex: {
     flexDirection: "row",
@@ -102,6 +103,12 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     fontSize: 12,
   },
+  signaturePlaceholder: {
+    textAlign: "center",
+    borderTop: "1px solid black",
+    width: 130,
+    marginHorizontal: 15,
+  },
 });
 
 const PaymentActDocument = ({
@@ -110,59 +117,65 @@ const PaymentActDocument = ({
   paymentId,
   clientType,
   paidDate,
+  companyName,
   companyCode,
   pvmCode,
   address,
   email,
-  failure,
+  service,
 }) => (
   <Document>
     <Page size="A4" style={styles.page}>
-      <View style={[styles.relative, styles.section, styles.marginBottom2]}>
-        <Image src={require("../assets/img/logo.png")} style={styles.logo} />
-
-        <Text style={styles.fontBold}>Paslaugos tiekėjas:</Text>
-        <Text style={styles.fontBold}>Kompiuterių taisykla MB „IT112“</Text>
-        <Text>MB „IT112“, įm. k. 306561580</Text>
-        <Text>Reg. adresas: Kalvarijų g. 2, Vilnius</Text>
-        <Text>Adresas: Kalvarijų g. 2, Vilnius</Text>
-        <Text>PVM kodas: LT100016378016</Text>
-      </View>
-
       <View style={styles.marginBottom2}>
-        <Text style={styles.fontBold}>SĄSKAITA APMOKĖJIMUI:</Text>
-        <Text>AB Swedbank: LT077300010181630587</Text>
+        <Image src={require("../assets/img/logo.png")} style={styles.logo} />
       </View>
 
-      <View style={styles.marginBottom4}>
-        <Text style={styles.fontBold}>Paslaugos pirkėjas:</Text>
-        <Text>
-          {clientType === "privatus" ? "Privatus klientas" : "Juridinis asmuo"}
-        </Text>
-        <Text>
-          Įmonės/asmens kodas: {clientType !== "privatus" ? companyCode : ""}
-        </Text>
-        <Text>PVM kodas: {clientType !== "privatus" ? pvmCode : ""}</Text>
-        <Text>Adresas: {clientType !== "privatus" ? address : ""}</Text>
-        <Text>El. Paštas: {clientType !== "privatus" ? email : ""}</Text>
+      <View style={[styles.flex, styles.justifyBetween, styles.marginBottom4]}>
+        <View style={styles.w50}>
+          <View style={styles.marginBottom1}>
+            <Text style={styles.fontBold}>Paslaugos tiekėjas:</Text>
+            <Text>MB „IT112“</Text>
+            <Text>Įm. k. 306561580</Text>
+            <Text>PVM kodas: LT100016378016</Text>
+            <Text>Adresas: Kalvarijų g. 2, Vilnius</Text>
+          </View>
+
+          <View>
+            <Text style={styles.fontBold}>Įmonės sąskaita:</Text>
+            <Text>AB Swedbank,</Text>
+            <Text>LT077300010181630587</Text>
+          </View>
+        </View>
+
+        <View style={styles.w50}>
+          <Text style={styles.fontBold}>Paslaugos pirkėjas:</Text>
+          <Text>
+            {clientType === "privatus" ? "Privatus klientas" : companyName}
+          </Text>
+          <Text>
+            Įmonės/asmens kodas: {clientType !== "privatus" ? companyCode : ""}
+          </Text>
+          <Text>PVM kodas: {clientType !== "privatus" ? pvmCode : ""}</Text>
+          <Text>Adresas: {clientType !== "privatus" ? address : ""}</Text>
+          <Text>El. Paštas: {clientType !== "privatus" ? email : ""}</Text>
+        </View>
       </View>
 
       <View style={styles.marginBottom1}>
         <Text style={styles.fontBold}>PVM SĄSKAITA - FAKTŪRA</Text>
-        <Text style={styles.fontBold}>
+        <Text>
           Serija {paymentMethod === "kortele" ? "CRD" : "GRN"}-{paymentId}
         </Text>
+        <Text>{paidDate.substring(0, 10)}</Text>
       </View>
-      <View>
-        <Text>{paidDate}</Text>
-        <Text>Sumokėti už:</Text>
-      </View>
+
+      <Text style={styles.fontBold}>Atsiskaityti už:</Text>
 
       <View style={styles.section}>
         <View style={styles.table}>
           <View style={styles.tableRow}>
             <View style={[styles.tableCol, styles.tableColName]}>
-              <Text style={styles.cell}>{failure} 1 vnt.</Text>
+              <Text style={styles.cell}>{service}</Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.cell}>
@@ -181,13 +194,19 @@ const PaymentActDocument = ({
         </View>
       </View>
 
-      <Text style={styles.marginBottom2}>
+      <Text style={styles.marginBottom4}>
         Sumokėta {paymentMethod === "kortele" ? "kortele" : "grynais"}.
       </Text>
 
-      <Text style={styles.marginBottom2}>Darbuotojo parašas:</Text>
+      <View style={[styles.flex, styles.justifyBetween]}>
+        <View style={styles.signaturePlaceholder}>
+          <Text style={styles.marginBottom2}>Darbuotojo parašas</Text>
+        </View>
 
-      <Text style={styles.marginBottom2}>Užsakovo parašas:</Text>
+        <View style={styles.signaturePlaceholder}>
+          <Text style={styles.marginBottom2}>Užsakovo parašas</Text>
+        </View>
+      </View>
     </Page>
   </Document>
 );

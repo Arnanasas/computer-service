@@ -13,6 +13,8 @@ import {
   Modal,
   Button,
 } from "react-bootstrap";
+import { PDFViewer } from "@react-pdf/renderer";
+import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
 
 import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
@@ -27,6 +29,7 @@ export default function Services() {
   const [skin, setSkin] = useState(currentSkin);
   const [data, setData] = useState([]);
   const [selectedItemId, setSelectedItemId] = useState(null);
+  const [paymentAct, setPaymentAct] = useState(null);
 
   const { logout } = useAuth();
 
@@ -105,6 +108,15 @@ export default function Services() {
     setSelectedItemId(itemId);
   };
 
+  const printPaymentAct = (index) => {
+    console.log("test");
+    setPaymentAct(data[index]);
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe.payment-act");
+      iframe.contentWindow.print();
+    }, 400);
+  };
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -176,7 +188,7 @@ export default function Services() {
                 </tr>
               </thead>
               <tbody>
-                {data.map((item) => (
+                {data.map((item, i) => (
                   <tr key={item.id}>
                     <td>
                       <Button
@@ -192,7 +204,24 @@ export default function Services() {
                     <td>{item.deviceSerial}</td>
                     <td>{item.failure}</td>
                     <td>{item.price}</td>
-                    <td>{item.status}</td>
+                    <td>
+                      {filter === "archive" ? (
+                        <div>
+                          {item.status}{" "}
+                          <p
+                            onClick={() => printPaymentAct(i)}
+                            className="cursor-pointer"
+                          >
+                            <a href="#" className="pe-none">
+                              {item.paymentMethod === "kortele" ? "CRT" : "GRN"}
+                              -{item.paymentId}
+                            </a>
+                          </p>
+                        </div>
+                      ) : (
+                        item.status
+                      )}
+                    </td>
                     <td>
                       {item.hasCharger ? (
                         <FaChargingStation
@@ -237,6 +266,24 @@ export default function Services() {
 
         <Footer />
       </div>
+
+      {paymentAct && (
+        <PDFViewer className="payment-act d-none">
+          <PaymentActDocument
+            price={paymentAct.price}
+            paymentMethod={paymentAct.paymentMethod}
+            paymentId={paymentAct.paymentId}
+            clientType={paymentAct.clientType}
+            paidDate={paymentAct.paidDate}
+            companyName={paymentAct.companyName}
+            companyCode={paymentAct.companyCode}
+            pvmCode={paymentAct.pvmCode}
+            address={paymentAct.address}
+            email={paymentAct.email}
+            failure={paymentAct.failure}
+          />
+        </PDFViewer>
+      )}
     </React.Fragment>
   );
 }

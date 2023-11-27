@@ -73,34 +73,8 @@ export default function AddService() {
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <ol className="breadcrumb fs-sm mb-1">
-              <li className="breadcrumb-item">
-                <Link href="#">Dashboard</Link>
-              </li>
-              <li className="breadcrumb-item active" aria-current="page">
-                On-going service
-              </li>
-            </ol>
             <h4 className="main-title mb-0">Dashboard</h4>
           </div>
-
-          <Nav as="nav" className="nav-icon nav-icon-lg">
-            <OverlayTrigger overlay={<Tooltip>Share</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-share-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip>Print</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-printer-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip>Report</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-bar-chart-2-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-          </Nav>
         </div>
 
         <Card className="card-one mt-3">

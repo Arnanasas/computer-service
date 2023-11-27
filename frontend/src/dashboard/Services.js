@@ -123,34 +123,8 @@ export default function Services() {
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <ol className="breadcrumb fs-sm mb-1">
-              <li className="breadcrumb-item">
-                <Link href="#">Dashboard</Link>
-              </li>
-              <li className="breadcrumb-item active" aria-current="page">
-                On-going service
-              </li>
-            </ol>
             <h4 className="main-title mb-0">Dashboard</h4>
           </div>
-
-          <Nav as="nav" className="nav-icon nav-icon-lg">
-            <OverlayTrigger overlay={<Tooltip>Share</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-share-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip>Print</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-printer-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-            <OverlayTrigger overlay={<Tooltip>Report</Tooltip>}>
-              <Nav.Link href="">
-                <i className="ri-bar-chart-2-line"></i>
-              </Nav.Link>
-            </OverlayTrigger>
-          </Nav>
         </div>
 
         <Modal
@@ -183,7 +157,7 @@ export default function Services() {
                   <th>Gedimas</th>
                   <th>Kaina</th>
                   <th>Būsena</th>
-                  <th>Info</th>
+                  {filter !== "archive" && <th>Info</th>}
                   <th>Veiksmai</th>
                 </tr>
               </thead>
@@ -207,13 +181,12 @@ export default function Services() {
                     <td>
                       {filter === "archive" ? (
                         <div>
-                          {item.status}{" "}
                           <p
                             onClick={() => printPaymentAct(i)}
                             className="cursor-pointer"
                           >
                             <a href="#" className="pe-none">
-                              {item.paymentMethod === "kortele" ? "CRT" : "GRN"}
+                              {item.paymentMethod === "kortele" ? "CRD" : "GRN"}
                               -{item.paymentId}
                             </a>
                           </p>
@@ -222,30 +195,32 @@ export default function Services() {
                         item.status
                       )}
                     </td>
-                    <td>
-                      {item.hasCharger ? (
-                        <FaChargingStation
-                          className="me-2"
-                          style={{ color: "#33d685" }}
-                        />
-                      ) : (
-                        <FaChargingStation
-                          className="me-2"
-                          style={{ color: "#dc3545" }}
-                        />
-                      )}
-                      {item.isContacted ? (
-                        <FaPhone
-                          className="me-2"
-                          style={{ color: "#33d685" }}
-                        />
-                      ) : (
-                        <FaPhone
-                          className="me-2"
-                          style={{ color: "#dc3545" }}
-                        />
-                      )}
-                    </td>
+                    {filter !== "archive" && (
+                      <td>
+                        {item.hasCharger ? (
+                          <FaChargingStation
+                            className="me-2"
+                            style={{ color: "#33d685" }}
+                          />
+                        ) : (
+                          <FaChargingStation
+                            className="me-2"
+                            style={{ color: "#dc3545" }}
+                          />
+                        )}
+                        {item.isContacted ? (
+                          <FaPhone
+                            className="me-2"
+                            style={{ color: "#33d685" }}
+                          />
+                        ) : (
+                          <FaPhone
+                            className="me-2"
+                            style={{ color: "#dc3545" }}
+                          />
+                        )}
+                      </td>
+                    )}
                     <td>
                       <Link to={`/edit/${item.id}`}>
                         <FaEdit />
@@ -279,7 +254,6 @@ export default function Services() {
             companyCode={paymentAct.companyCode}
             pvmCode={paymentAct.pvmCode}
             address={paymentAct.address}
-            email={paymentAct.email}
             service={paymentAct.service}
           />
         </PDFViewer>

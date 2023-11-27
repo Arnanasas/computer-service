@@ -121,7 +121,6 @@ const PaymentActDocument = ({
   companyCode,
   pvmCode,
   address,
-  email,
   service,
 }) => (
   <Document>
@@ -157,7 +156,6 @@ const PaymentActDocument = ({
           </Text>
           <Text>PVM kodas: {clientType !== "privatus" ? pvmCode : ""}</Text>
           <Text>Adresas: {clientType !== "privatus" ? address : ""}</Text>
-          <Text>El. Paštas: {clientType !== "privatus" ? email : ""}</Text>
         </View>
       </View>
 

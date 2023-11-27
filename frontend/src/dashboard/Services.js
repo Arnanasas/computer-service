@@ -280,7 +280,7 @@ export default function Services() {
             pvmCode={paymentAct.pvmCode}
             address={paymentAct.address}
             email={paymentAct.email}
-            failure={paymentAct.failure}
+            service={paymentAct.service}
           />
         </PDFViewer>
       )}

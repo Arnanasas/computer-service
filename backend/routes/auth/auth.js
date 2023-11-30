@@ -75,14 +75,16 @@ router.post("/login", async (req, res) => {
     const { error } = await loginSchema.validateAsync(req.body);
     if (error) return res.status(400).send(error.details[0].message);
     else {
-
       // SENDING BACK THE TOKEN IN AN HTTPONLY COOKIE
-      const token = jwt.sign({ nickname: user.nickname }, process.env.TOKEN_SECRET);
+      const token = jwt.sign(
+        { nickname: user.nickname },
+        process.env.TOKEN_SECRET
+      );
 
       res.cookie("auth-token", token, {
         httpOnly: true,
         // secure: true, // Only send the cookie over HTTPS
-        maxAge: 3600000, // 1 hour in milliseconds
+        // maxAge: 3600000, // 1 hour in milliseconds
         sameSite: "strict", // Adjust as needed
         path: "/", // Adjust as needed
       });
@@ -93,7 +95,5 @@ router.post("/login", async (req, res) => {
     res.status(500).send(error);
   }
 });
-
-
 
 module.exports = router;

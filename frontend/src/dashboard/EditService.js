@@ -107,7 +107,7 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.acceptance-act");
       iframe.contentWindow.print();
-    }, 400);
+    }, 600);
   };
 
   const getPaymentAct = () => {
@@ -120,7 +120,7 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.payment-act");
       iframe.contentWindow.print();
-    }, 400);
+    }, 600);
   };
 
   return (

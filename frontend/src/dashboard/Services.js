@@ -114,7 +114,7 @@ export default function Services() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.payment-act");
       iframe.contentWindow.print();
-    }, 400);
+    }, 600);
   };
 
   return (

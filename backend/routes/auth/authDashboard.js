@@ -72,7 +72,8 @@ router.put("/services/:id", verify, async (req, res) => {
     const service = await Service.findOne({ id: serviceId });
 
     const paymentId =
-      (service && service.paymentId) || (await getNewPaymentId());
+      (service && service.paymentId) ||
+      (await getNewPaymentId(req.body.paymentMethod));
 
     // Find the service by ID and update it
     const updatedService = await Service.findOneAndUpdate(
@@ -96,29 +97,17 @@ router.post("/services", verify, async (req, res) => {
 
     // Calculate the number of devices fixed on the current date
     const currentDate = moment().format("YYMMDD");
-    const lastServiceFixedToday = await Service.findOne(
-      { id: { $regex: `^${currentDate}` } },
-      {},
-      { sort: { id: -1 } }
-    );
+    const devicesFixedToday = await Service.count({
+      id: { $regex: `^${currentDate}` },
+    });
 
-    let lastPhoneNumberDigit, devicesFixedToday;
-
-    if (lastServiceFixedToday) {
-      devicesFixedToday = parseInt(lastServiceFixedToday.id.split("-")[1]);
-      lastPhoneNumberDigit = lastServiceFixedToday.number.slice(-1);
-    } else {
-      devicesFixedToday = 0;
-      lastPhoneNumberDigit = serviceData.number.slice(-1);
-    }
+    let lastPhoneNumberDigit = serviceData.number.slice(-1);
 
     const customId = `${currentDate}${lastPhoneNumberDigit}-${
       devicesFixedToday + 1
     }`;
 
-    const paymentId = await getNewPaymentId();
-
-    const serviceWithId = { ...serviceData, id: customId, paymentId };
+    const serviceWithId = { ...serviceData, id: customId };
 
     const service = new Service(serviceWithId);
     const savedService = await service.save();
@@ -231,8 +220,8 @@ router.get("/serviceInfo", async (req, res) => {
 
 module.exports = router;
 
-const getNewPaymentId = async () => {
-  const highestPaymentService = await Service.findOne({})
+const getNewPaymentId = async (paymentMethod) => {
+  const highestPaymentService = await Service.findOne({ paymentMethod })
     .sort("-paymentId")
     .limit(1);
   if (!highestPaymentService) return 1;

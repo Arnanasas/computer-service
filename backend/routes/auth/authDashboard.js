@@ -73,7 +73,9 @@ router.put("/services/:id", verify, async (req, res) => {
 
     const paymentId =
       (service && service.paymentId) ||
-      (await getNewPaymentId(req.body.paymentMethod));
+      (req.body.paymentMethod
+        ? await getNewPaymentId(req.body.paymentMethod)
+        : null);
 
     // Find the service by ID and update it
     const updatedService = await Service.findOneAndUpdate(
@@ -224,6 +226,7 @@ const getNewPaymentId = async (paymentMethod) => {
   const highestPaymentService = await Service.findOne({ paymentMethod })
     .sort("-paymentId")
     .limit(1);
+  console.log("highest", highestPaymentService);
   if (!highestPaymentService) return 1;
   return (highestPaymentService.paymentId || 0) + 1;
 };

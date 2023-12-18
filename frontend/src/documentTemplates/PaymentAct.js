@@ -177,12 +177,12 @@ const PaymentActDocument = ({
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.cell}>
-                Kaina: {(price - (price * 0.21).toFixed(2)).toFixed(2)} €
+                Kaina: {(price / 1.21).toFixed(2)} €
               </Text>
             </View>
             <View style={styles.tableCol}>
               <Text style={styles.cell}>
-                PVM 21%: {(price * 0.21).toFixed(2)} €
+                PVM 21%: {(price - (price / 1.21).toFixed(2)).toFixed(2)} €
               </Text>
             </View>
             <View style={styles.tableCol}>

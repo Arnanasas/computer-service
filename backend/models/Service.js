@@ -20,7 +20,7 @@ const serviceSchema = new mongoose.Schema({
   companyName: String,
   companyCode: Number,
   service: String,
-  pvmCode: Number,
+  pvmCode: String,
   address: String,
 });
 

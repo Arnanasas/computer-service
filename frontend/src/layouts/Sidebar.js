@@ -5,6 +5,8 @@ import userAvatar from "../assets/img/img1.jpg";
 import withAuthProps from "./withAuthProps";
 import { dashboardMenu, applicationsMenu } from "../data/Menu";
 
+import logoImage from "../assets/img/logoit.png";
+
 class Sidebar extends Component {
   toggleFooterMenu = (e) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ class Sidebar extends Component {
       <div className="sidebar">
         <div className="sidebar-header">
           <Link to="/" className="sidebar-logo">
-            it112
+            <img src={logoImage} alt="Logo" width="35%" />
           </Link>
         </div>
         <PerfectScrollbar

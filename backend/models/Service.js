@@ -13,6 +13,7 @@ const serviceSchema = new mongoose.Schema({
   status: String,
   isContacted: Boolean,
 
+  profit: Number,
   paidDate: Date,
   paymentMethod: String,
   paymentId: Number,

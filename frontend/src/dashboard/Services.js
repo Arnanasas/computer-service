@@ -123,7 +123,7 @@ export default function Services() {
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="main-title mb-0">Dashboard</h4>
+            <h4 className="main-title mb-0">Valdymo pultas</h4>
           </div>
         </div>
 
@@ -143,7 +143,7 @@ export default function Services() {
 
         <Card className="card-one mt-3">
           <Card.Header>
-            <Card.Title as="h6">Now working on service</Card.Title>
+            <Card.Title as="h6">Aktyvūs servisai</Card.Title>
           </Card.Header>
           <Card.Body>
             <Table striped bordered hover>

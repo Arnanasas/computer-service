@@ -129,13 +129,13 @@ export default function EditService() {
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="main-title mb-0">Dashboard</h4>
+            <h4 className="main-title mb-0">Valdymo pultas</h4>
           </div>
         </div>
 
         <Card className="card-one mt-3">
           <Card.Header>
-            <Card.Title as="h6">Now working on service</Card.Title>
+            <Card.Title as="h6">Serviso redagavimas</Card.Title>
           </Card.Header>
           <Card.Body>
             <Formik
@@ -169,6 +169,7 @@ export default function EditService() {
                 hasCharger: Boolean(data.hasCharger), // Convert to boolean
                 status: data.status || "",
                 isContacted: Boolean(data.isContacted), // Convert to boolean
+                profit: data.profit || "",
               }}
               enableReinitialize={true}
             >
@@ -336,6 +337,21 @@ export default function EditService() {
                             />
                             <Form.Control.Feedback type="invalid">
                               {errors.price}
+                            </Form.Control.Feedback>
+                          </div>
+                          <div className="mb-3">
+                            <Form.Label htmlFor="price">Uždarbis</Form.Label>
+                            <Form.Control
+                              type="number"
+                              id="profit"
+                              name="profit"
+                              value={values.profit}
+                              onChange={handleChange}
+                              isInvalid={!!errors.profit}
+                              isValid={touched.profit && !errors.profit}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                              {errors.profit}
                             </Form.Control.Feedback>
                           </div>
                         </Form.Group>

@@ -2,22 +2,22 @@ const dashboardMenu = [
   {
     label: "Taisoma vietoje",
     link: "/services/all",
-    icon: "ri-pie-chart-2-line",
+    icon: "ri-number-1",
   },
   {
     label: "Neišvežta",
     link: "/services/to-send",
-    icon: "ri-pie-chart-2-line",
+    icon: "ri-number-2",
   },
   {
     label: "Taisoma kitur",
     link: "/services/elsewhere",
-    icon: "ri-pie-chart-2-line",
+    icon: "ri-number-3",
   },
   {
     label: "Sutaisyta, pranešta",
     link: "/services/waiting",
-    icon: "ri-pie-chart-2-line",
+    icon: "ri-number-4",
   },
 ];
 
@@ -25,17 +25,22 @@ const applicationsMenu = [
   {
     label: "Registruoti naują",
     link: "/add-service",
-    icon: "ri-question-answer-line",
+    icon: "ri-menu-add-line",
   },
   {
-    label: "Parduoti",
-    link: "/services/archive",
-    icon: "ri-question-answer-line",
+    label: "Greitas Pardavimas",
+    link: "/quick-add",
+    icon: "ri-add-circle-line",
   },
   {
     label: "Archyvas",
-    link: "/apps/chat",
-    icon: "ri-question-answer-line",
+    link: "/services/archive",
+    icon: "ri-inbox-unarchive-line",
+  },
+  {
+    label: "Statistika",
+    link: "/apps/statistics",
+    icon: "ri-bar-chart-box-line",
   },
 ];
 

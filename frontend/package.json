@@ -18,7 +18,7 @@
     "apexcharts": "^3.37.0",
     "axios": "^1.4.0",
     "bootstrap": "^5.2.3",
-    "chart.js": "^4.2.0",
+    "chart.js": "^4.4.1",
     "cryptofont": "^0.1.1",
     "dompurify": "^2.4.3",
     "dotenv": "^16.3.1",

@@ -220,6 +220,15 @@ router.get("/serviceInfo", async (req, res) => {
   }
 });
 
+router.get("/sales-data", verify, async (req, res) => {
+  try {
+    const salesData = await getMonthlySalesData();
+    res.json(salesData);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
 module.exports = router;
 
 const getNewPaymentId = async (paymentMethod) => {
@@ -230,3 +239,33 @@ const getNewPaymentId = async (paymentMethod) => {
   if (!highestPaymentService) return 1;
   return (highestPaymentService.paymentId || 0) + 1;
 };
+
+async function getMonthlySalesData() {
+  return Service.aggregate([
+    {
+      $addFields: {
+        yearMonth: {
+          $concat: [
+            { $toString: { $year: "$paidDate" } },
+            "-",
+            { $toString: { $month: "$paidDate" } },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$yearMonth",
+        totalProfit: { $sum: "$profit" }, // Summing the profit field instead of numericPrice
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        yearMonth: "$_id",
+        totalProfit: 1, // Projecting totalProfit
+      },
+    },
+    { $sort: { yearMonth: 1 } },
+  ]);
+}

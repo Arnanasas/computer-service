@@ -24,7 +24,7 @@ export default function Statistics({ itemId }) {
 
   useEffect(() => {
     axios
-      .get("${process.env.REACT_APP_URL}/dashboard/sales-data`, {
+      .get(`${process.env.REACT_APP_URL}/dashboard/sales-data`, {
         withCredentials: true,
       })
       .then((response) => {

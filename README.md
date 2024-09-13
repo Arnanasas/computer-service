@@ -20,7 +20,7 @@ The backend is developed using Node.js and Express. It serves as the server-side
 
 ```
 DB_CONNECT=mongodb+srv://{username}:{password}@pcfix.kfimecs.mongodb.net/?retryWrites=true&w=majority
-TOKEN_SECRET=kasjkadnjsasbghcajhsncaksldlaisdjkansd
+
  ```
 
 4. Install dependencies:

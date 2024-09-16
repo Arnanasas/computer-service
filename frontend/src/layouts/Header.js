@@ -182,14 +182,17 @@ export default function Header({ onSkin }) {
 
       {/* <Dropdown className="dropdown-notification ms-3 ms-xl-4" align="end">
         <Dropdown.Toggle as={CustomToggle}>
-          <small>3</small><i className="ri-notification-3-line"></i>
+          <small>3</small>
+          <i className="ri-notification-3-line"></i>
         </Dropdown.Toggle>
         <Dropdown.Menu className="mt-10-f me--10-f">
           <div className="dropdown-menu-header">
             <h6 className="dropdown-menu-title">Notifications</h6>
           </div>
           {NotificationList()}
-          <div className="dropdown-menu-footer"><Link to="#">Show all Notifications</Link></div>
+          <div className="dropdown-menu-footer">
+            <Link to="#">Show all Notifications</Link>
+          </div>
         </Dropdown.Menu>
       </Dropdown> */}
 

@@ -3,6 +3,11 @@ const verify = require("./authVerify");
 const Service = require("../../models/Service");
 const Comment = require("../../models/Comment");
 const moment = require("moment"); // Import the moment library for date formatting
+const Product = require("../../models/Product");
+const Category = require("../../models/Category"); // Assuming you're using the Category model
+const Storage = require("../../models/Storage"); //
+
+const dayjs = require("dayjs");
 
 const router = require("express").Router();
 
@@ -269,3 +274,181 @@ async function getMonthlySalesData() {
     { $sort: { yearMonth: 1 } },
   ]);
 }
+
+function calculatePercentageChange(current, previous) {
+  if (previous === 0) return current > 0 ? 100 : 0;
+  return ((current - previous) / previous) * 100;
+}
+
+// Endpoint to get dashboard data
+router.get("/dashboard-stats", async (req, res) => {
+  try {
+    // Get current and last month
+    const currentMonthStart = dayjs().startOf("month").toDate();
+    const lastMonthStart = dayjs()
+      .subtract(1, "month")
+      .startOf("month")
+      .toDate();
+    const lastMonthEnd = dayjs().subtract(1, "month").endOf("month").toDate();
+
+    // 1. Clients This Month
+    const clientsThisMonth = await Service.countDocuments({
+      paidDate: { $gte: currentMonthStart },
+    });
+
+    // Clients Last Month
+    const clientsLastMonth = await Service.countDocuments({
+      paidDate: { $gte: lastMonthStart, $lte: lastMonthEnd },
+    });
+
+    // 2. Average Profit Per Client (This Month)
+    const totalProfitThisMonth = await Service.aggregate([
+      { $match: { paidDate: { $gte: currentMonthStart } } },
+      { $group: { _id: null, totalProfit: { $sum: "$profit" } } },
+    ]);
+
+    const totalProfitLastMonth = await Service.aggregate([
+      { $match: { paidDate: { $gte: lastMonthStart, $lte: lastMonthEnd } } },
+      { $group: { _id: null, totalProfit: { $sum: "$profit" } } },
+    ]);
+
+    // Handle cases where no data exists for total profit
+    const profitThisMonth = totalProfitThisMonth[0]?.totalProfit || 0;
+    const profitLastMonth = totalProfitLastMonth[0]?.totalProfit || 0;
+
+    const averageProfitPerClientThisMonth =
+      clientsThisMonth > 0 ? profitThisMonth / clientsThisMonth : 0;
+    const averageProfitPerClientLastMonth =
+      clientsLastMonth > 0 ? profitLastMonth / clientsLastMonth : 0;
+
+    // Calculate percentage changes
+    const clientsPercentageChange = calculatePercentageChange(
+      clientsThisMonth,
+      clientsLastMonth
+    );
+    const profitPercentageChange = calculatePercentageChange(
+      averageProfitPerClientThisMonth,
+      averageProfitPerClientLastMonth
+    );
+
+    // Determine status (up or down)
+    const clientsStatus = clientsThisMonth > clientsLastMonth ? "up" : "down";
+    const profitStatus =
+      averageProfitPerClientThisMonth > averageProfitPerClientLastMonth
+        ? "up"
+        : "down";
+
+    // Prepare the response
+    const response = [
+      {
+        label: "Klientų šį mėnesį",
+        icon: "ri-shopping-bag-3-line",
+        value: clientsThisMonth,
+        percent: Math.abs(clientsPercentageChange.toFixed(1)),
+        status: clientsStatus,
+      },
+      {
+        label: "Vidutinis pelnas per klientą",
+        icon: "ri-briefcase-4-line",
+        value: `${averageProfitPerClientThisMonth.toFixed(2)} €`,
+        percent: Math.abs(profitPercentageChange.toFixed(1)),
+        status: profitStatus,
+      },
+    ];
+
+    res.json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server Error");
+  }
+});
+
+// Inventoriaus valdymas
+
+// POST /api/products - Create a new product
+router.post("/products", async (req, res) => {
+  try {
+    // Extract data from the request body
+    const {
+      name,
+      description,
+      model,
+      category,
+      stock,
+      price,
+      storage,
+      partNumber,
+    } = req.body;
+
+    // Validation: Check if the required fields are provided
+    if (!name || !category || !price || !storage || !partNumber) {
+      return res
+        .status(400)
+        .json({ error: "All required fields must be filled" });
+    }
+
+    // Check if the category and storage exist in the database by name
+    const categoryName = await Category.findOne({ name: category });
+    const storageName = await Storage.findOne({ locationName: storage });
+
+    if (!categoryName) {
+      return res.status(400).json({ error: "Invalid category name" });
+    }
+
+    if (!storageName) {
+      return res.status(400).json({ error: "Invalid storage location name" });
+    }
+
+    // Create a new product
+    const newProduct = new Product({
+      name,
+      description,
+      model,
+      category: categoryName._id,
+      stock: stock || 0, // Default to 0 if stock is not provided
+      price,
+      storage: storageName._id,
+      partNumber,
+    });
+
+    // Save the product to the database
+    const savedProduct = await newProduct.save();
+
+    // Respond with the created product
+    res.status(201).json(savedProduct);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/categories", async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const category = new Category({ name, description });
+
+    await category.save();
+    res
+      .status(201)
+      .json({ message: "Category created successfully", category });
+  } catch (error) {
+    res
+      .status(500)
+      .send({ error: "Failed to create category", details: error });
+  }
+});
+
+// POST route to create a new storage
+router.post("/storages", async (req, res) => {
+  try {
+    const { locationName, description } = req.body;
+    const storage = new Storage({ locationName, description });
+
+    await storage.save();
+    res.status(201).json({ message: "Storage created successfully", storage });
+  } catch (error) {
+    res.status(500).send({ error: "Failed to create storage", details: error });
+  }
+});
+
+module.exports = router;

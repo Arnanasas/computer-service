@@ -48,15 +48,12 @@ export default function Statistics({ itemId }) {
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
-
       <div className="main main-app p-3 p-lg-4">
         <h1>Pardavimų grafikas</h1>
         <div style={{ height: "100%", width: "100%" }}>
           <SalesChart salesData={salesData} />
         </div>
       </div>
-
-      {/* <Footer /> */}
     </React.Fragment>
   );
 }

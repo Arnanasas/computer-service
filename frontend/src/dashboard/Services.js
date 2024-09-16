@@ -65,18 +65,25 @@ export default function Services() {
   };
 
   const handleDelete = (serviceId) => {
-    axios
-      .delete(`${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`, {
-        withCredentials: true,
-      })
-      .then((response) => {
-        console.log("Service deleted:", response.data.message);
-        setData(data.filter((item) => item.id !== serviceId));
-        // You might want to update your local state or fetch data again
-      })
-      .catch((error) => {
-        console.error("Error deleting service:", error);
-      });
+    const isConfirmed = window.confirm("Ar tikrai ištrinti šį servisą?");
+
+    if (isConfirmed) {
+      axios
+        .delete(
+          `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+          {
+            withCredentials: true,
+          }
+        )
+        .then((response) => {
+          console.log("Service deleted:", response.data.message);
+          setData(data.filter((item) => item.id !== serviceId));
+          // You might want to update your local state or fetch data again
+        })
+        .catch((error) => {
+          console.error("Error deleting service:", error);
+        });
+    }
   };
 
   switchSkin(skin);
@@ -153,7 +160,7 @@ export default function Services() {
                   <th>Vardas</th>
                   <th>Numeris</th>
                   <th>Modelis</th>
-                  <th>Serijinis nr.</th>
+                  {/* <th>Serijinis nr.</th> */}
                   <th>Gedimas</th>
                   <th>Kaina</th>
                   <th>Būsena</th>
@@ -175,7 +182,7 @@ export default function Services() {
                     <td>{item.name}</td>
                     <td>{item.number}</td>
                     <td>{item.deviceModel}</td>
-                    <td>{item.deviceSerial}</td>
+                    {/* <td>{item.deviceSerial}</td> */}
                     <td>{item.failure}</td>
                     <td>{item.price}</td>
                     <td>

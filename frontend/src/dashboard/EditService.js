@@ -21,6 +21,7 @@ import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
+import styled from "styled-components";
 
 export default function EditService() {
   const navigate = useNavigate();
@@ -122,6 +123,12 @@ export default function EditService() {
       iframe.contentWindow.print();
     }, 600);
   };
+
+  // const Button = styled.button`
+  //   padding: 1rem;
+  //   border-radius: 5px;
+
+  // `;
 
   return (
     <React.Fragment>

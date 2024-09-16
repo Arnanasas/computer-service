@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import userAvatar from "../assets/img/img1.jpg";
 import withAuthProps from "./withAuthProps";
-import { dashboardMenu, applicationsMenu } from "../data/Menu";
+import { dashboardMenu, applicationsMenu, inventoryMenu } from "../data/Menu";
 
 import logoImage from "../assets/img/logoit.png";
 
@@ -156,6 +156,12 @@ class SidebarMenu extends Component {
             Kitos funkcijos
           </div>
           {this.populateMenu(applicationsMenu)}
+        </div>
+        <div className="nav-group show">
+          <div className="nav-label" onClick={this.toggleMenu}>
+            Inventoriaus valdymas
+          </div>
+          {this.populateMenu(inventoryMenu)}
         </div>
       </React.Fragment>
     );

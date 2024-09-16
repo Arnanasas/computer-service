@@ -1,5 +1,10 @@
 const dashboardMenu = [
   {
+    label: "Verslo būsena",
+    link: "/apps/dashboard",
+    icon: "ri-suitcase-line",
+  },
+  {
     label: "Taisoma vietoje",
     link: "/services/all",
     icon: "ri-number-1",
@@ -33,6 +38,11 @@ const applicationsMenu = [
     icon: "ri-add-circle-line",
   },
   {
+    label: "Išankstinės sąskaitos",
+    link: "/add-pre-invoice",
+    icon: "ri-add-circle-line",
+  },
+  {
     label: "Archyvas",
     link: "/services/archive",
     icon: "ri-inbox-unarchive-line",
@@ -49,6 +59,19 @@ const pagesMenu = [
     label: "Atsijungti",
     link: "/apps/chat",
     icon: "ri-question-answer-line",
+  },
+];
+
+const inventoryMenu = [
+  {
+    label: "Pridėti inventorių",
+    link: "/inventory/add",
+    icon: "ri-file-add-line",
+  },
+  {
+    label: "Visas inventorius",
+    link: "/inventory",
+    icon: "ri-file-paper-2-line",
   },
 ];
 
@@ -291,4 +314,10 @@ const uiElementsMenu = [
   },
 ];
 
-export { dashboardMenu, applicationsMenu, pagesMenu, uiElementsMenu };
+export {
+  dashboardMenu,
+  applicationsMenu,
+  pagesMenu,
+  inventoryMenu,
+  uiElementsMenu,
+};

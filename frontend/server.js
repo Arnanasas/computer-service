@@ -13,4 +13,5 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Frontend app is running on port ${PORT}`);
+  console.log("remix");
 });

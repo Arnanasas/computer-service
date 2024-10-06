@@ -11,6 +11,7 @@ import Dashboard from "../apps/Dashboard";
 import AddPreInvoice from "../dashboard/AddPreInvoice";
 import Inventory from "../dashboard/Inventory";
 import AddInventory from "../dashboard/AddInventory";
+import CaptureSignature from "../dashboard/CaptureSignature";
 
 const protectedRoutes = [
   { path: "/", element: <Services /> },
@@ -22,6 +23,7 @@ const protectedRoutes = [
   { path: "apps/dashboard", element: <Dashboard /> },
   { path: "/inventory", element: <Inventory /> },
   { path: "/inventory/add", element: <AddInventory /> },
+  { path: "/capture-signature", element: <CaptureSignature /> },
 ];
 
 export default protectedRoutes;

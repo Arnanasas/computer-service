@@ -6,10 +6,10 @@ import axios from "axios";
 import { Button, Card, Col, Row, Form } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
-import PreInvoiceAct from "../documentTemplates/PreInvoiceAct";
 
-export default function AddInventory() {
+export default function EditInventory() {
   const navigate = useNavigate();
+  const productId = window.location.pathname.split("/").pop();
   const { Formik } = formik;
 
   // Update the validation schema for inventory fields
@@ -26,12 +26,21 @@ export default function AddInventory() {
       .number()
       .required("Price is required")
       .min(0, "Price can't be negative"),
-    ourPrice: yup
-      .number()
-      .required("Bought price is required")
-      .min(0, "Our price can't be negative"),
+    ourPrice: yup.number().min(0, "Price can't be negative"),
     partNumber: yup.string().required("Part number is required"),
-    storage: yup.string().required("Storage location is required"),
+    storage: yup.string(),
+  });
+
+  const [data, setData] = useState({
+    name: "",
+    description: "",
+    model: "",
+    category: "",
+    stock: 0,
+    price: "0",
+    ourPrice: "0",
+    partNumber: "",
+    storage: "Kalvariju",
   });
 
   // Predefined categories and locations
@@ -39,14 +48,9 @@ export default function AddInventory() {
     { value: "Telefonai", label: "Telefonai" },
     { value: "Kompiuteriai", label: "Kompiuteriai" },
     { value: "Plansetes", label: "Plansetes" },
-    // Add more categories as needed
   ];
 
-  const locations = [
-    { value: "Kalvariju", label: "Kalvariju" },
-    { value: "store-1", label: "Store 1" },
-    { value: "store-2", label: "Store 2" },
-  ];
+  const locations = [{ value: "Kalvariju", label: "Kalvariju" }];
 
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
@@ -77,6 +81,26 @@ export default function AddInventory() {
     switchSkin(skin);
   }, [skin]);
 
+  useEffect(() => {
+    // Fetch service data when component mounts
+    axios
+      .get(`${process.env.REACT_APP_URL}/dashboard/products/${productId}`, {
+        withCredentials: true,
+      })
+      .then((response) => {
+        setData({
+          ...response.data,
+          category: response.data.category.name,
+          storage: response.data.storage.locationName,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching service data:", error);
+      });
+
+    console.log(data);
+  }, [productId]);
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -89,15 +113,15 @@ export default function AddInventory() {
 
         <Card className="card-one mt-3">
           <Card.Header>
-            <Card.Title as="h6">Pridėti inventorių</Card.Title>
+            <Card.Title as="h6">Redaguoti inventorių inventorių</Card.Title>
           </Card.Header>
           <Card.Body>
             <Formik
               validationSchema={validationSchema}
               onSubmit={async (values) => {
                 try {
-                  const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/dashboard/products`, // Update endpoint for inventory
+                  const response = await axios.put(
+                    `${process.env.REACT_APP_URL}/dashboard/products/${productId}`, // Update endpoint for inventory
                     values,
                     {
                       withCredentials: true,
@@ -110,16 +134,17 @@ export default function AddInventory() {
                 }
               }}
               initialValues={{
-                name: "",
-                description: "",
-                model: "",
-                category: "Telefonai",
-                stock: 1,
-                price: "15",
-                ourPrice: "10",
-                partNumber: "",
-                storage: "Kalvariju",
+                name: data.name || "",
+                description: data.description || "",
+                model: data.model || "",
+                category: data.category || "",
+                stock: data.stock || 0,
+                price: data.price || "0",
+                ourPrice: data.ourPrice || "0",
+                partNumber: data.partNumber || "",
+                storage: data.storage || "",
               }}
+              enableReinitialize={true}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
                 <Form onSubmit={handleSubmit}>
@@ -285,17 +310,16 @@ export default function AddInventory() {
                   <Row>
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="location">Lokacija</Form.Label>
+                        <Form.Label htmlFor="storage">Lokacija</Form.Label>
                         <Form.Control
                           as="select"
-                          id="location"
-                          name="location"
-                          value={values.location}
+                          id="storage"
+                          name="storage"
+                          value={values.storage}
                           onChange={handleChange}
-                          isInvalid={!!errors.location}
-                          isValid={touched.location && !errors.location}
+                          isInvalid={!!errors.storage}
+                          isValid={touched.storage && !errors.storage}
                         >
-                          <option value="Kalvariju">Kalvariju</option>
                           {locations.map((loc) => (
                             <option key={loc.value} value={loc.value}>
                               {loc.label}
@@ -303,7 +327,7 @@ export default function AddInventory() {
                           ))}
                         </Form.Control>
                         <Form.Control.Feedback type="invalid">
-                          {errors.location}
+                          {errors.storage}
                         </Form.Control.Feedback>
                       </div>
                     </Col>

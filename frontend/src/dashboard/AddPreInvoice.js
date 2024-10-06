@@ -41,11 +41,22 @@ export default function AddPreInvoice() {
     }
   };
 
+  const getPreInvoice = () => {
+    setShowPreInvoice(true);
+
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe.acceptance-act");
+      iframe.contentWindow.print();
+    }, 600);
+  };
+
   switchSkin(skin);
 
   useEffect(() => {
     switchSkin(skin);
   }, [skin]);
+
+  console.log(showPreInvoice);
 
   return (
     <React.Fragment>
@@ -75,7 +86,7 @@ export default function AddPreInvoice() {
               }}
               onSubmit={(values) => {
                 setFormValues(values); // Store form values in state
-                setShowPreInvoice(true); // Show the PDFViewer
+                getPreInvoice(); // Show the PDFViewer
               }}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (

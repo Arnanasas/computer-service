@@ -2,13 +2,16 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
-const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const dotenv = require("dotenv");
+const { rateLimit } = require("express-rate-limit");
 
 //IMPORT ROUTES
 const authRoute = require("./routes/auth/auth");
 const authDashboard = require("./routes/auth/authDashboard");
+const messageRoute = require("./routes/message");
+const signatureRoute = require("./routes/sign");
 
 //ACCESSING THE ENVIRONMENT VARIABLES
 dotenv.config();
@@ -37,10 +40,20 @@ app.use(
   })
 );
 
+// Limiter
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 50, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+});
+
 //ROUTE MIDDLEWARE
 app.use(cookieParser());
 app.use("/api/users", authRoute);
 app.use("/api/dashboard", authDashboard);
+app.use("/api/send-msg", messageRoute);
+app.use("/api/signature", signatureRoute);
+app.use(limiter);
 
 const server = http.createServer(app); // Create an HTTP server instance
 const io = new Server(server, {

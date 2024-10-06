@@ -23,6 +23,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    ourPrice: {
+      type: Number,
+      min: 0,
+    },
     storage: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Storage",
@@ -44,5 +48,7 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+productSchema.index({ name: "text", description: "text", model: "text" });
 
 module.exports = mongoose.model("Product", productSchema);

@@ -1,0 +1,121 @@
+partId,name,quantity,ourPrice,price,model
+AP110001B5-JK,JK LCD Unit Complete For iPhone 11 (In-cell FHD),1,15.44,15.44,Iphone 11
+AP1104,"Battery 3110mAh, For iPhone 11",1,9.07,9.07,Iphone 11
+AP1106B,"dock connector - Black, for iPhone 11",1,7.76,7.76,Iphone 11
+AP11P0001B3,"OLED (soft) Touchscreen (Compatible) - Black, For iPhone 11 Pro",1,54.48,54.48,Iphone 11 Pro
+AP11P04,"Battery 3046mAh, For iPhone 11 Pro",1,9.23,9.23,Iphone 11 Pro
+AP11PM001B3,"OLED (soft) Touchscreen (Compatible) - Black, For iPhone 11 Pro Max",1,34.02,34.02,Iphone 11 Pro Max
+AP11PM04,"Battery 3969mAh, For iPhone 11 Pro Max",1,10.02,10.02,Iphone 11 Pro Max
+AP120001B5,"LCD Touchscreen (In-Cell) - Black, For iPhone 12 and iPhone 12 Pro",1,21.48,21.48,Iphone 12/Pro
+AP120004,"Battery 2815mAh, For iPhone 12 and iPhone 12 Pro",1,9.07,9.07,Iphone 12/Pro
+AP120006GR,"Dock connector - Grey, for iPhone 12 and iPhone 12 Pro",1,10.31,10.31,Iphone 12/Pro
+AP12M0001B5,"LCD Touchscreen (In-Cell) - Black, For iPhone 12 mini",1,29.98,29.98,Iphone 12 mini
+AP12M0004,"Battery 2227mAh, For iPhone 12 mini",1,7.64,7.64,Iphone 12 mini
+AP12M0006B,"Dock connector - Black, for iPhone 12 mini",1,10.11,10.11,Iphone 12 mini
+AP12PM0004,"Battery 3687mAh, For iPhone 12 Pro Max",1,9.82,9.82,Iphone 12 Pro Max
+AP12PM001B3,"OLED (soft) Touchscreen (Compatible) - Black, For iPhone 12 Pro Max",1,73.98,73.98,Iphone 12 Pro Max
+AP12PM006W,"Dock Connector - White, for iPhone 12 Pro Max",1,15.39,15.39,Iphone 12 Pro Max
+AP130001B5,"LCD Touchscreen (In-Cell) - Black, For iPhone 13",1,37.4,37.4,Iphone 13
+AP130004,"Battery 3227mAh, For iPhone 13",1,11.34,11.34,Iphone 13
+AP130006B,"Dock Connector - Black, for iPhone 13",1,13.42,13.42,Iphone 13
+AP13M0001B5,"LCD Touchscreen (In-Cell) - Black, For iPhone 13 mini",1,29.98,29.98,Iphone 13 mini
+AP13M0004,"Battery 2460mAh, For iPhone 13 mini",1,8.78,8.78,Iphone 13 mini
+AP13P0004,"Battery 3095mAh, For iPhone 13 Pro",1,10.58,10.58,Iphone 13 Pro
+AP13P0006B,"Dock Connector - Black, for iPhone 13 Pro",1,16.59,16.59,Iphone 13 Pro
+AP13PM0004,"Battery 4352mAh, For iPhone 13 Pro Max",1,11.52,11.52,Iphone 13 Pro Max
+AP13PM006B,"Dock Connector - Black, for iPhone 13 Pro Max",1,16.64,16.64,Iphone 13 Pro Max
+AP140001B5,"LCD Touchscreen (In-Cell) - Black, For iPhone 14",1,28.34,28.34,Iphone 14
+AP140004,"Battery 3279mAh, For iPhone 14",1,11.69,11.69,Iphone 14
+AP140006B,"Dock Connector - Black, for iPhone 14",1,14.32,14.32,Iphone 14
+AP14P0001B3,"OLED (Soft) Touchscreen (Compatible) - Black, For iPhone 14 Pro",1,128.49,128.49,Iphone 14 Pro
+AP14P0004,"Battery 3200mAh, For iPhone 14 Pro",1,12.6,12.6,Iphone 14 Pro
+AP14P0006W,"Dock Connector - White, for iPhone 14 Pro",1,19.55,19.55,Iphone 14 Pro
+AP14PL0001B5,"LCD (soft) Touchscreen - Black, (In-Cell) For iPhone 14 Plus",1,32.04,32.04,Iphone 14 Plus
+AP14PL0004,"Battery 4323mAh, For iPhone 14 Plus",1,11.87,11.87,Iphone 14 Plus
+AP14PL0006B,"Dock Connector - Black, for iPhone 14 Plus",1,16.6,16.6,Iphone 14 Plus
+AP14PM0004,"Battery 4323mAh, For iPhone 14 Pro Max",1,14.07,14.07,Iphone 14 Pro Max
+AP14PM006B,"Dock Connector - Black, for iPhone 14 Pro Max",1,24.57,24.57,Iphone 14 Pro Max
+AP150004,"Battery 3349mAh, For iPhone 15",1,11.87,11.87,Iphone 15
+AP150006B,"Dock Connector - Black, for iPhone 15",1,26.45,26.45,Iphone 15
+AP15P0004,"Battery 3274mAh, For iPhone 15 Pro",1,14.07,14.07,Iphone 15 Pro
+AP15P0006GR,"Dock Connector - Natural Titanium, for iPhone 15 Pro",1,28.33,28.33,Iphone 15 Pro
+AP15PL0004,"Battery 4383mAh, For iPhone 15 Plus",1,12.42,12.42,Iphone 15 Plus
+AP15PM0004,"Battery 4422mAh, For iPhone 15 Pro Max",1,14.28,14.28,Iphone 15 Pro Max
+AP15PM006BL,"Dock Connector - Blue Titanium, for iPhone 15 Pro Max",1,29.25,29.25,Iphone 15 Pro Max
+APSE2006B,"dock connector - Black, for iPhone SE (2020 & 2022)",1,8.56,8.56,Iphone SE
+EP-TA800NWEGWW-BULK,Samsung Travel Fast Charger (USB Type-C) 3A 25W - White (bulk packaging) (**Charger ONLY**),2,10.52,10.52,Pakrovejas
+GH59-15556A,"Charging Board, Galaxy A53 5G",SM-A536B,1,14.28,Galaxy 53 5G
+GH82-21669A,"OLED Touchscreen - Black, Galaxy A51",SM-A515F,1,45.35,Galaxy A51
+GH82-22122A,"Battery, Galaxy S20",SM-G981,1,16.46,S20
+GH82-22133A,"Battery, Galaxy S20 Plus",SM-G985F,1,17.2,S20 Plus
+GH82-22272A,"Battery, Galaxy S20 Ultra 5G",SM-G988B,1,20.53,S20 Ultra 5G
+GH82-24205A,"Battery, Galaxy S20 FE 4G",SM-G780F,1,19.7,S20 FE 4G
+GH82-24499A,"Back Cover - Phantom Black, Galaxy S21 Ultra",SM-G998B,1,31.73,S21 Ultra
+GH82-24505A,"Back Cover - Phantom Black, Galaxy S21 Plus",SM-G996B,1,24.95,S21 Plus
+GH82-24519A,"Back Cover - Phantom Grey, Galaxy S21",SM-G991B,1,17.96,S21
+GH82-24537A,"Battery, Galaxy S21",SM-G991B,1,17.76,S21
+GH82-24556A,"Battery, Galaxy S21 Plus",SM-G996B,1,19.7,S21 Plus
+GH82-24592A,"Battery, Galaxy S21 Ultra",SM-G998B,1,19.43,S21 Ultra
+GH82-26409A,"Battery, Galaxy S21 FE",SM-G990B,1,19.66,S21 FE
+GH82-27434A,"Back Glass - Phantom Black, Galaxy S22",SM-S901B,1,25.4,S22
+GH82-27444A,"Back Glass - Black, Galaxy S22 Plus",SM-S906B,1,20.14,S22 Plus
+GH82-27457A,"Back Cover - Phantom Black, Galaxy S22 Ultra",SM-S908B,1,27.69,S22 Ultra
+GH82-27484A,"Battery, Galaxy S22 Ultra",SM-S908B,1,24.55,S22 Ultra
+GH82-27494A,"Battery, Galaxy S22 5G",SM-S901B,1,19.17,S22 5G
+GH82-27502A,"Battery, Galaxy S22 Plus",SM-S906B,1,19.9,S22 Plus
+GH82-30388A,"Back Cover - Phantom Black, Galaxy S23 Plus",SM-S916B,1,22.15,S23 Plus
+GH82-30393A,"Back Cover - Phantom Black, Galaxy S23",SM-S911B,1,22.48,S23
+GH82-30400A,"Back Cover - Phantom Black, Galaxy S23 Ultra",SM-S918B,1,29.93,S23 Ultra
+GH82-30459A,"Battery, Galaxy S23 Ultra",SM-S918B,1,21.76,S23 Ultra
+GH82-30470A,"Battery, Galaxy S23 Plus",SM-S916B,1,20.23,S23 Plus
+GH82-30483A,"Battery, Galaxy S23",SM-S911B,1,20.14,S23
+GH82-31245A,"OLED Touchscreen (excl. frame), Galaxy S23",SM-S911U,1,67,S23
+GH82-31247A,"OLED Touchscreen (excl. frame), Galaxy S23 Ultra",SM-918B,1,157,S23 Ultra
+GH82-31249A,"OLED Touchscreen (excl. frame), Galaxy S23 Plus 5G",SM-S916B,1,79.52,S23 Plus 5G
+GH82-32856A,"OLED Touchscreen (excl. frame), Galaxy S23 FE",SM-S711B,1,44.36,S23 FE
+GH82-32860A,"Battery, Galaxy S23 FE",SM-S711B,1,19.41,S23 FE
+GH82-33101A,"Back Cover - Onyx Black, Galaxy S24",SM-S921B,1,21.81,S24
+GH82-33275A,"Back Cover - Onyx Black, Galaxy S24 Plus",SM-S926B,1,22.28,S24 Plus
+GH82-33286A,"OLED Touchscreen (excl. frame), Galaxy S24",SM-S921,1,80,S24
+GH82-33290A,"Battery, Galaxy S24",SM-S921B,1,21.95,S24
+GH82-33332A,"OLED Touchscreen (excl. Frame), Galaxy S24 Plus",SM-S926,1,114.4,S24 Plus
+GH82-33334A,"Battery, Galaxy S24 Plus",SM-S926B,1,21.35,S24 Plus
+GH82-33349B,"Back Cover - Titanium Black, Galaxy S24 Ultra",SM-S928B,1,25.11,S24 Ultra
+GH82-33385A,"OLED Touchscreen (excl. Frame), Galaxy S24 Ultra",SM-S928,1,153.88,S24 Ultra
+GH82-33387A,"Battery, Galaxy S24 Ultra",SM-S928B,1,21.4,S24 Ultra
+GH96-12454A,USB charging board - Galaxy A40,SM-A405F,1,10.09,A40
+GH96-12468A,"USB Charging Board, Galaxy A70",SM-A705F,1,10.41,A70
+GH96-12542A,"USB Charging Board, Galaxy A80",SM-A805F,1,13.54,A80
+GH96-12616A,USB charging board - Galaxy A50,SM-A505F,1,10.14,A50
+GH96-12851A,USB charging board - Galaxy A71,SM-A715F,1,10.06,A71
+GH96-12857A,USB charging board - Galaxy A30,SM-A307FN,1,10.08,A30
+GH96-13080A,"Charging Board, Galaxy S20",SM-G981B,1,12.77,S20
+GH96-13083A,"Charging Board, Galaxy S20 Plus",SM-G986B,1,14.1,S20 Plus
+GH96-13300A,"Charging Board, Galaxy S20 Ultra (5G)",SM-G988B,1,11.74,S20 Ultra 5G
+GH96-13379A,USB charging board - Galaxy A41,SM-A415F,1,8.97,A41
+GH96-13848A,USB charging board - Galaxy S20 FE 5G,SM-G781B,1,12.72,S20 FE 5G
+GH96-13911B,"OLED Touchscreen, (excl. frame) - Galaxy S20 FE",SM-G780F SM-G781B,1,63.29,S20 FE
+GH96-13940B,"OLED Touchscreen, (excl. Frame) - Galaxy S21 Plus",SM-G996B,1,96.22,S21 Plus
+GH96-13942B,"OLED Touchscreen, (excl. Frame) - Galaxy S21",SM-G991B,1,97.98,S21 
+GH96-13993A,"Charging Board, Galaxy S21 Plus",SM-G996B,1,14.93,S21 Plus
+GH96-14033A,"Charging Board, Galaxy S21 (5G)",SM-G991B,1,15.07,S21 5G
+GH96-14064A,"Charging Board, Galaxy S21 Ultra",SM-S998B,1,14.54,S21 Ultra
+GH96-14121A,USB charging board - Galaxy A52 5G & A52 4G,SM-A526B - SM-A525F,1,12.36,A52 
+GH96-14128A,USB charging board - Galaxy A72 4G,SM-A725F,1,14.45,A72
+GH96-14548A,"Charging Board, Galaxy S21 FE",SM-G990B,1,13.76,S21 FE
+GH96-14785A,"OLED Touchscreen, (excl. Frame) - Galaxy S22 Plus",SM-G906B,1,104.85,S22 Plus
+GH96-14786A,OLED Touchscreen - (excl. Frame) - Galaxy S22,SM-G901B,1,97.68,S22
+GH96-14788A,OLED Touchscreen (excl. frame) - Galaxy S22 Ultra,SM-S908B,1,148.55,S22 Ultra
+GH96-14789A,"Charging Board, Galaxy S22",SM-S901B,1,16.63,S22
+GH96-14802A,"Charging Board, Galaxy S22 Ultra",SM-S908B,1,13.77,S22 Ultra
+GH96-14805A,"Charging Board, Galaxy S22 Plus",SM-S906B,1,14.4,S22 Plus
+GH96-15010A,"Charging Board, Galaxy A73",SM-A736B,1,12.2,A73
+GH96-15620A,"Charging Board, Galaxy S23 Plus",SM-S916B,1,14.64,S23 Plus
+GH96-15621A,"Charging Board, Galaxy S23 Ultra",SM-S918B,1,15.96,S23 Ultra
+GH96-15629A,"Charging Board, Galaxy S23",SM-S911B,1,14.68,S23
+GH96-15666A,USB Charging Board - Galaxy A54 5G,SM-A546B,1,11.68,A54
+GH96-16217A,"Charging Board, Galaxy S23 FE",SM-S711B,1,13.46,S23 FE
+GH96-16497A,"Charging Board, Galaxy S24 Ultra",SM-S928B,1,14.51,S24 Ultra
+GH96-16507A,"Charging Board, Galaxy S24",SM-S921B,1,13.63,S24
+GH96-16542A,"Charging Board, Galaxy S24 Plus",SM-S926B,1,13.69,S24 Plus
+PZ-30013,"Car Charger, Black - Dual USB 2.4A",1,1.5,1.5,Pakrovejas

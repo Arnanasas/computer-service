@@ -10,6 +10,7 @@ import {
   OverlayTrigger,
   Table,
   Tooltip,
+  Pagination,
   Modal,
   Button,
 } from "react-bootstrap";
@@ -32,6 +33,10 @@ export default function Services() {
   const [paymentAct, setPaymentAct] = useState(null);
 
   const { logout } = useAuth();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 20; // Items per page
 
   // Socket comment
   useEffect(() => {
@@ -64,6 +69,10 @@ export default function Services() {
     }
   };
 
+  useEffect(() => {
+    setCurrentPage(1); // Reset to the first page when the filter changes
+  }, [filter]);
+
   const handleDelete = (serviceId) => {
     const isConfirmed = window.confirm("Ar tikrai ištrinti šį servisą?");
 
@@ -93,19 +102,25 @@ export default function Services() {
   }, [skin]);
 
   useEffect(() => {
-    // Fetch data from the API using Axios
+    // Fetch data with pagination
     axios
       .get(`${process.env.REACT_APP_URL}/dashboard/services/${filter}`, {
+        params: { page: currentPage, limit },
         withCredentials: true,
       })
       .then((response) => {
-        setData(response.data); // Update state with fetched data
+        setData(response.data.services); // Update state with fetched data
+        setTotalPages(response.data.pagination.totalPages); // Set total pages for pagination
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        logout();
+        // logout();
       });
-  }, [filter]);
+  }, [filter, currentPage]);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   const [show, setShow] = useState(false);
 
@@ -164,6 +179,7 @@ export default function Services() {
                   <th>Gedimas</th>
                   <th>Kaina</th>
                   <th>Būsena</th>
+                  <th>Pasirašytas?</th>
                   {filter !== "archive" && <th>Info</th>}
                   <th>Veiksmai</th>
                 </tr>
@@ -182,7 +198,6 @@ export default function Services() {
                     <td>{item.name}</td>
                     <td>{item.number}</td>
                     <td>{item.deviceModel}</td>
-                    {/* <td>{item.deviceSerial}</td> */}
                     <td>{item.failure}</td>
                     <td>{item.price}</td>
                     <td>
@@ -201,6 +216,18 @@ export default function Services() {
                       ) : (
                         item.status
                       )}
+                    </td>
+                    <td>
+                      <Link to={`/capture-signature/${item.id}`}>
+                        <Button
+                          variant={item.isSigned ? "success" : "warning"}
+                          size="sm"
+                          type="submit"
+                          className="mx-2"
+                        >
+                          Parašas
+                        </Button>
+                      </Link>
                     </td>
                     {filter !== "archive" && (
                       <td>
@@ -243,6 +270,33 @@ export default function Services() {
                 ))}
               </tbody>
             </Table>
+            <Pagination>
+              <Pagination.First
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+              />
+              <Pagination.Prev
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              />
+              {[...Array(totalPages)].map((_, index) => (
+                <Pagination.Item
+                  key={index + 1}
+                  active={index + 1 === currentPage}
+                  onClick={() => handlePageChange(index + 1)}
+                >
+                  {index + 1}
+                </Pagination.Item>
+              ))}
+              <Pagination.Next
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              />
+              <Pagination.Last
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+              />
+            </Pagination>
           </Card.Body>
         </Card>
 

@@ -7,6 +7,7 @@ import {
   Row,
   Table,
   Tooltip,
+  Alert,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import Header from "../layouts/Header";
@@ -16,22 +17,13 @@ import Avatar from "../components/Avatar";
 import ReactApexChart from "react-apexcharts";
 import dayjs from "dayjs";
 import { useEffect } from "react";
-import { Bar } from "react-chartjs-2";
-import { dp1, dp2, dp3 } from "../data/DashboardData";
-import { VectorMap } from "@react-jvectormap/core";
-import { usAea } from "@react-jvectormap/unitedstates";
-
-import img6 from "../assets/img/img6.jpg";
-import img7 from "../assets/img/img7.jpg";
-import img8 from "../assets/img/img8.jpg";
-import img9 from "../assets/img/img9.jpg";
-import img10 from "../assets/img/img10.jpg";
 
 export default function Dashboard() {
   const [dp1, setDp1] = useState([]); // Tikrasis (Actual Profit)
   const [dp2, setDp2] = useState([]); // Planuojamas (Static Planned Profit)
   const [categories, setCategories] = useState([]); // To hold months
   const [dashboardData, setDashboardData] = useState([]);
+  const [outOfStockProducts, setOutOfStockProducts] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -83,6 +75,22 @@ export default function Dashboard() {
     };
 
     fetchData();
+
+    const fetchOutOfStockProducts = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_URL}/dashboard/products-out-of-stock`,
+          {
+            withCredentials: true,
+          }
+        );
+        setOutOfStockProducts(response.data);
+      } catch (error) {
+        console.error("Error fetching out-of-stock products:", error);
+      }
+    };
+
+    fetchOutOfStockProducts();
   }, []);
 
   const seriesOne = [
@@ -183,6 +191,18 @@ export default function Dashboard() {
                   height={300}
                   className="apex-chart-one mb-4"
                 />
+                <Row>
+                  {outOfStockProducts.length > 0 && (
+                    <div className="mb-3">
+                      {outOfStockProducts.map((product) => (
+                        <Alert key={product._id} variant="warning">
+                          Produktas <strong>{product.name}</strong> turi 0 kiekį
+                          sandėlyje!
+                        </Alert>
+                      ))}
+                    </div>
+                  )}
+                </Row>
               </Card.Body>
             </Card>
           </Col>

@@ -17,6 +17,8 @@ import "./assets/css/remixicon.css";
 import "./scss/style.scss";
 import EditService from "./dashboard/EditService";
 import Services from "./dashboard/Services";
+import CaptureSignature from "./dashboard/CaptureSignature";
+import EditInventory from "./dashboard/EditInventory";
 
 // set skin on load
 window.addEventListener("load", function () {
@@ -50,6 +52,24 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <EditService />
+                  </ProtectedRoute>
+                }
+              ></Route>
+
+              <Route
+                path="/edit-inventory/:id"
+                element={
+                  <ProtectedRoute>
+                    <EditInventory />
+                  </ProtectedRoute>
+                }
+              ></Route>
+
+              <Route
+                path="/capture-signature/:id"
+                element={
+                  <ProtectedRoute>
+                    <CaptureSignature />
                   </ProtectedRoute>
                 }
               ></Route>

@@ -6,6 +6,11 @@ const moment = require("moment"); // Import the moment library for date formatti
 const Product = require("../../models/Product");
 const Category = require("../../models/Category"); // Assuming you're using the Category model
 const Storage = require("../../models/Storage"); //
+const { createComment } = require("../../services/commentService");
+const multer = require("multer");
+const csv = require("csv-parser");
+const fs = require("fs");
+const upload = multer({ dest: "uploads/" });
 
 const dayjs = require("dayjs");
 
@@ -16,6 +21,7 @@ router.get("/services/:filter", verify, async (req, res) => {
     const filter = req.params.filter;
     let query = {};
 
+    // Set filter query based on the filter parameter
     switch (filter) {
       case "all":
         query = { status: { $ne: "Atsiskaityta" } };
@@ -36,8 +42,33 @@ router.get("/services/:filter", verify, async (req, res) => {
         return res.status(400).json({ error: "Invalid filter" });
     }
 
-    const services = await Service.find(query);
-    res.status(200).json(services);
+    // Extract page and limit from query parameters with default values
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Count total documents for the current filter query
+    const totalServices = await Service.countDocuments(query);
+
+    // Fetch services with pagination
+    const services = await Service.find(query)
+      .skip(skip) // Skip previous pages' items
+      .limit(limit) // Limit the number of items per request
+      .exec();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalServices / limit);
+
+    // Send paginated response
+    res.status(200).json({
+      services,
+      pagination: {
+        totalServices,
+        totalPages,
+        currentPage: page,
+        pageSize: services.length,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -113,8 +144,9 @@ router.post("/services", verify, async (req, res) => {
     const customId = `${currentDate}${lastPhoneNumberDigit}-${
       devicesFixedToday + 1
     }`;
+    const isSigned = false;
 
-    const serviceWithId = { ...serviceData, id: customId };
+    const serviceWithId = { ...serviceData, id: customId, isSigned: isSigned };
 
     const service = new Service(serviceWithId);
     const savedService = await service.save();
@@ -139,21 +171,13 @@ router.post("/comment", verify, async (req, res) => {
     // Extract data from the request body
     const { serviceId, comment, createdBy, isPublic } = req.body;
 
-    // Create a new comment
-    const newComment = new Comment({
+    const comments = await createComment({
       serviceId,
       comment,
       createdBy,
       isPublic,
-      seenBy: [createdBy], // The creator has obviously seen their own comment
     });
 
-    // Save the comment to the database
-    const savedComment = await newComment.save();
-
-    const comments = await Comment.find({ serviceId: serviceId }).sort({
-      createdAt: -1,
-    }); // Sort by newest first
     res.status(200).json(comments);
   } catch (error) {
     // Handle any errors
@@ -376,6 +400,7 @@ router.post("/products", async (req, res) => {
       category,
       stock,
       price,
+      ourPrice,
       storage,
       partNumber,
     } = req.body;
@@ -407,6 +432,7 @@ router.post("/products", async (req, res) => {
       category: categoryName._id,
       stock: stock || 0, // Default to 0 if stock is not provided
       price,
+      ourPrice,
       storage: storageName._id,
       partNumber,
     });
@@ -448,6 +474,265 @@ router.post("/storages", async (req, res) => {
     res.status(201).json({ message: "Storage created successfully", storage });
   } catch (error) {
     res.status(500).send({ error: "Failed to create storage", details: error });
+  }
+});
+
+// Get all products with optional filtering
+router.get("/products", async (req, res) => {
+  try {
+    const {
+      category,
+      storage,
+      minStock,
+      maxStock,
+      name,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    // Build the query object dynamically based on filters
+    let query = {};
+
+    // Name filter
+    if (name) {
+      query.$text = { $search: name }; // Full-text search
+    }
+
+    // Category filter
+    if (category) {
+      query.category = category;
+    }
+
+    // Storage filter
+    if (storage) {
+      query.storage = storage;
+    }
+
+    // Min Stock filter
+    if (minStock) {
+      query.stock = { ...query.stock, $gte: Number(minStock) };
+    }
+
+    // Max Stock filter
+    if (maxStock) {
+      query.stock = { ...query.stock, $lte: Number(maxStock) };
+    }
+
+    // Convert page and limit to numbers
+    const pageNumber = parseInt(page, 10);
+    const pageSize = parseInt(limit, 10);
+
+    // Fetch the products with category and storage populated, apply pagination
+    const products = await Product.find(query)
+      .populate("category")
+      .populate("storage")
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize);
+
+    // Get the total count of products that match the query for pagination
+    const totalProducts = await Product.countDocuments(query);
+
+    res.json({
+      products,
+      totalPages: Math.ceil(totalProducts / pageSize),
+      currentPage: pageNumber,
+      totalProducts,
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error); // Log the error for debugging
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/categories", async (req, res) => {
+  try {
+    const categories = await Category.find(); // Fetch all categories
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/storages", async (req, res) => {
+  try {
+    const storages = await Storage.find(); // Fetch all storages
+    res.json(storages);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.delete("/products/:id", verify, async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    // Find the service by ID and remove it
+    const deletedProduct = await Product.findOneAndRemove({ _id: productId });
+
+    if (!deletedProduct) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.status(200).json({ message: "Product deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/products/:id", verify, async (req, res) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findOne({ _id: productId })
+      .populate("category", "name")
+      .populate("storage", "locationName"); // Populate Storage name;
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put("/products/:id", verify, async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const {
+      name,
+      description,
+      model,
+      category,
+      stock,
+      price,
+      ourPrice,
+      storage,
+      partNumber,
+      partsUsed,
+    } = req.body;
+
+    const categoryName = await Category.findOne({ name: category });
+    const storageName = await Storage.findOne({ locationName: storage });
+
+    if (!categoryName) {
+      return res.status(400).json({ error: "Invalid category name" });
+    }
+
+    if (!storageName) {
+      return res.status(400).json({ error: "Invalid storage location name" });
+    }
+
+    const product = await Product.findOne({ _id: productId });
+    // Find the service by ID and update it
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: productId },
+      {
+        name,
+        description,
+        model,
+        category: categoryName._id,
+        stock: stock || 0,
+        price,
+        ourPrice,
+        storage: storageName._id,
+        partNumber,
+        partsUsed,
+      },
+      { new: true } // Return the updated document
+    );
+    if (!updatedProduct) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    res.status(200).json({ ...updatedProduct._doc });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/products/quantity-change", async (req, res) => {
+  try {
+    const { partId, quantityChange } = req.body; // Get part ID and quantity change from request
+
+    const product = await Product.findById(partId); // Find product by ID
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Adjust stock (subtract quantity for used parts, add when quantity is decreased)
+    const newStock = product.stock + quantityChange; // quantityChange could be positive or negative
+    if (newStock < 0) {
+      return res.status(400).json({ error: "Insufficient stock" });
+    }
+
+    if (newStock > product.stock) {
+      return res
+        .status(400)
+        .json({ error: "Stock cannot be larger than the original stock" });
+    }
+
+    product.stock = newStock; // Update stock
+    await product.save();
+
+    res.json({ message: "Stock updated", product });
+  } catch (error) {
+    console.error("Error updating product stock:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/products/submit-csv", upload.single("file"), async (req, res) => {
+  const filePath = req.file.path;
+  const categoryName = await Category.findOne({ name: "Telefonai" });
+  const storageName = await Storage.findOne({ locationName: "Kalvariju" });
+
+  fs.createReadStream(filePath)
+    .pipe(csv())
+    .on("data", async (row) => {
+      const { partId, name, ourPrice, price, quantity, model } = row;
+
+      try {
+        let product = await Product.findOne({ partNumber: partId });
+
+        if (product) {
+          // Update quantity if product exists
+          product.stock += parseInt(quantity, 10);
+        } else {
+          // Create new product if it doesn't exist
+          product = new Product({
+            name,
+            ourPrice: parseFloat(ourPrice),
+            price: parseFloat(price),
+            stock: parseInt(quantity, 10),
+            model,
+            partNumber: partId,
+            storage: storageName._id,
+            category: categoryName._id,
+          });
+        }
+
+        await product.save();
+      } catch (error) {
+        console.error(`Error processing row: ${JSON.stringify(row)}`, error);
+      }
+    })
+    .on("end", () => {
+      fs.unlinkSync(filePath); // Remove the file after processing
+      res.status(200).send("CSV file processed successfully");
+    })
+    .on("error", (error) => {
+      console.error("Error reading CSV file", error);
+      res.status(500).send("Error processing CSV file");
+    });
+});
+
+router.get("/products-out-of-stock", async (req, res) => {
+  try {
+    // Find all products where stock is 0
+    const products = await Product.find({ stock: 0 }).select("name");
+
+    // Send the product names as the response
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching out-of-stock products:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

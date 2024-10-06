@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
@@ -7,11 +7,13 @@ import {
   Button,
   Card,
   Col,
-  Nav,
+  Form,
+  InputGroup,
+  FormControl,
+  Table,
   OverlayTrigger,
   Row,
   Tooltip,
-  Form,
   Modal,
 } from "react-bootstrap";
 import * as yup from "yup";
@@ -21,11 +23,12 @@ import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
-import styled from "styled-components";
+import { Toaster, toast } from "react-hot-toast";
 
 export default function EditService() {
   const navigate = useNavigate();
   const serviceId = window.location.pathname.split("/").pop();
+
   const [data, setData] = useState({
     id: "",
     name: "",
@@ -42,18 +45,23 @@ export default function EditService() {
   const [isAcceptanceActShown, setIsAcceptanceActShown] = useState(false);
   const [isPaymentActShown, setIsPaymentActShown] = useState(false);
   const [isPaymentModalShown, setIsPaymentModalShown] = useState(false);
+  const [isMessageModalShown, setIsMessageModalShown] = useState(false);
 
   const { Formik } = formik;
 
   const validationSchema = yup.object().shape({
     id: yup.string().required(),
     name: yup.string().required("Name is required"),
-    number: yup.string().required("Number is required"),
+    number: yup
+      .string()
+      .required()
+      .matches(/^6\d{7}$/, "Number must start with 6 and be 8 characters long"),
     deviceModel: yup.string().required("Device Model is required"),
     deviceSerial: yup.string(),
     devicePassword: yup.string(),
     failure: yup.string().required("Failure is required"),
     price: yup.number().required("Price is required"),
+    profit: yup.number().required("Profit is required"),
     hasCharger: yup.boolean().required("Has Charger is required"),
     status: yup.string().required("Status is required"),
     isContacted: yup.boolean().required("Is Contacted is required"),
@@ -95,7 +103,18 @@ export default function EditService() {
         withCredentials: true,
       })
       .then((response) => {
-        setData(response.data);
+        const serviceData = response.data;
+        setData(serviceData);
+
+        if (serviceData.usedParts && serviceData.usedParts.length > 0) {
+          setSelectedParts(
+            serviceData.usedParts.map((part) => ({
+              _id: part._id,
+              name: part.name,
+              quantity: part.quantity,
+            }))
+          );
+        }
       })
       .catch((error) => {
         console.error("Error fetching service data:", error);
@@ -115,6 +134,60 @@ export default function EditService() {
     setIsPaymentModalShown(true);
   };
 
+  const messageModal = useCallback(() => setIsMessageModalShown(true), []);
+
+  const sendAccept = async (id, number) => {
+    let values = {
+      phoneNumber: data.number,
+      serviceId: data.id,
+    };
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/send-msg/accept`,
+        values,
+        {
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      if (error.response && error.response.data) {
+        // If server provided a response error, return that message
+        throw new Error(
+          error.response.data.message || "Unknown error occurred"
+        );
+      } else {
+        // If no response from server, throw general error
+        throw new Error("Network error or server is unreachable");
+      }
+    }
+  };
+
+  const sendPickup = async (id, number) => {
+    let values = {
+      phoneNumber: data.number,
+      serviceId: data.id,
+    };
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/send-msg/pick-up`,
+        values,
+        {
+          withCredentials: true,
+        }
+      );
+    } catch (error) {
+      if (error.response && error.response.data) {
+        // If server provided a response error, return that message
+        throw new Error(
+          error.response.data.message || "Unknown error occurred"
+        );
+      } else {
+        // If no response from server, throw general error
+        throw new Error("Network error or server is unreachable");
+      }
+    }
+  };
+
   const printPaymentAct = () => {
     setIsPaymentActShown(true);
 
@@ -124,15 +197,126 @@ export default function EditService() {
     }, 600);
   };
 
-  // const Button = styled.button`
-  //   padding: 1rem;
-  //   border-radius: 5px;
+  // Add Parts
 
-  // `;
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedParts, setSelectedParts] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [query, setQuery] = useState({
+    name: "",
+    category: "",
+    storage: "",
+    minStock: "",
+    maxStock: "",
+  });
+
+  useEffect(() => {
+    fetchProducts();
+  }, [query]);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_URL}/dashboard/products`, // Update endpoint for inventory
+        {
+          params: {
+            ...query,
+            limit: 30,
+          },
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      setProducts(response.data.products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const updatePartStock = async (partId, quantityChange) => {
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_URL}/dashboard/products/quantity-change`,
+        {
+          partId,
+          quantityChange, // Send part ID and quantity change to the backend
+        },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error("Error updating part stock:", error);
+    }
+  };
+
+  // When adding a part (reduce stock by 1)
+  const addPart = (part) => {
+    const isAlreadyAdded = selectedParts.some(
+      (selectedPart) => selectedPart._id === part._id
+    );
+    if (!isAlreadyAdded) {
+      setSelectedParts((prevParts) => [...prevParts, { ...part, quantity: 1 }]);
+
+      // Reduce stock in the backend by 1
+      updatePartStock(part._id, -1);
+    } else {
+      alert("This part has already been added.");
+    }
+  };
+
+  // When removing a part (restore stock by the part's quantity)
+  const removePart = (id) => {
+    const removedPart = selectedParts.find((part) => part._id === id);
+    console.log("Removing part: ", removedPart);
+    setSelectedParts(selectedParts.filter((part) => part._id !== id));
+
+    // Increase stock in backend by the part's used quantity
+    if (removedPart) {
+      console.log(
+        "Restoring stock for part:",
+        removedPart._id,
+        "Quantity:",
+        removedPart.quantity
+      );
+      updatePartStock(removedPart._id, removedPart.quantity); // Restore stock
+    }
+  };
+
+  const handleQuantityChange = (id, newQuantity) => {
+    const updatedQuantity = Number(newQuantity);
+
+    setSelectedParts((prevParts) =>
+      prevParts.map((part) =>
+        part._id === id ? { ...part, quantity: updatedQuantity } : part
+      )
+    );
+
+    // Find the part in the list
+    const partToUpdate = selectedParts.find((part) => part._id === id);
+    if (partToUpdate) {
+      if (updatedQuantity < 0) {
+        alert("Quantity cannot be less than 0");
+        return;
+      }
+
+      if (updatedQuantity > partToUpdate.stock) {
+        alert(
+          `Quantity cannot be greater than available stock (${partToUpdate.stock})`
+        );
+        return;
+      }
+      // Calculate the difference between the old and new quantities
+      const quantityDifference = updatedQuantity - partToUpdate.quantity;
+
+      // Update stock in the backend by the difference
+      updatePartStock(id, -quantityDifference); // Negative when reducing stock
+    }
+  };
 
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
+      <Toaster />
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
@@ -149,10 +333,17 @@ export default function EditService() {
               validationSchema={validationSchema}
               onSubmit={async (values) => {
                 console.log(values);
+
+                const partsUsed = selectedParts.map((part) => ({
+                  _id: part._id, // Assuming part._id is the partId
+                  name: part.name,
+                  quantity: part.quantity,
+                }));
+
                 try {
                   const response = await axios.put(
                     `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
-                    values,
+                    { ...values, usedParts: partsUsed },
                     {
                       withCredentials: true,
                     }
@@ -223,7 +414,13 @@ export default function EditService() {
                             id="number"
                             name="number"
                             value={values.number}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              handleChange(e);
+                              setData((prevData) => ({
+                                ...prevData, // Spread the existing fields
+                                number: e.target.value, // Update the number field
+                              }));
+                            }}
                             isInvalid={!!errors.number}
                             isValid={touched.number && !errors.number}
                           />
@@ -390,20 +587,68 @@ export default function EditService() {
                         />
                       </div>
                     </Form.Group>
-                    <Button variant="primary" type="submit">
+                    <Row>
+                      <Form.Label htmlFor="#">
+                        <b>Naudojamos dalys</b>
+                      </Form.Label>
+                      <Table striped bordered hover>
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Dalies pavadinimas</th>
+                            <th>Lokacija</th>
+                            <th>Kiekis</th>
+                            <th>Veiksmai</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedParts.map((part) => (
+                            <tr key={part._id}>
+                              <td>{part._id}</td>
+                              <td>{part.name}</td>
+                              <td>{part.storage?.locationName}</td>
+                              <td>
+                                <FormControl
+                                  type="number"
+                                  value={part.quantity}
+                                  onChange={(e) =>
+                                    handleQuantityChange(
+                                      part._id,
+                                      e.target.value
+                                    )
+                                  }
+                                  min={1}
+                                />
+                              </td>
+                              <td>
+                                <Button
+                                  variant="danger"
+                                  onClick={() => removePart(part._id)}
+                                >
+                                  Ištrinti
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
+                    </Row>
+                    <Button variant="primary" type="submit" className="mx-2">
                       Patvirtinti
                     </Button>
                     <Button
-                      onClick={getAcceptanceAct}
+                      onClick={() => getAcceptanceAct}
                       variant="secondary"
                       type="button"
+                      className="mx-2"
                     >
                       Priėmimo kvitas
                     </Button>
                     <Button
-                      onClick={getPaymentAct}
+                      onClick={() => getPaymentAct}
                       variant="secondary"
                       type="button"
+                      className="mx-2"
                     >
                       Mokėjimo kvitas
                     </Button>
@@ -423,11 +668,80 @@ export default function EditService() {
                 </>
               )}
             </Formik>
+            <Row>
+              <Col>
+                <Button
+                  onClick={() => {
+                    messageModal();
+                  }}
+                  variant="danger"
+                  type="button"
+                  className="mx-2 my-2"
+                >
+                  Siųsti žinutę
+                </Button>
+                <Button
+                  variant="warning"
+                  onClick={() => setShowProductModal(true)}
+                >
+                  Pridėti dalis
+                </Button>
+              </Col>
+            </Row>
           </Card.Body>
         </Card>
 
         <Footer />
       </div>
+
+      <Modal
+        className="modal-event"
+        show={isMessageModalShown}
+        onHide={() => setIsMessageModalShown(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Informuoti klientą apie</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Row>
+            <Col>
+              <Button
+                onClick={() => {
+                  toast.promise(sendAccept(data.id, data.number), {
+                    loading: "Siunčiama žinutė...",
+                    success: <b>Žinutė sėkmingai išsiųsta!</b>,
+                    error: (error) => <b>{error.message}</b>,
+                  });
+                }}
+                variant="success"
+                type="button"
+                className="mx-2"
+              >
+                Sėkmingai užregistruotas
+              </Button>
+            </Col>
+          </Row>
+          <Row className="my-2">
+            <Col>
+              <Button
+                onClick={() => {
+                  toast.promise(sendPickup(data.id, data.number), {
+                    loading: "Siunčiama žinutė...",
+                    success: <b>Žinutė sėkmingai išsiųsta!</b>,
+                    error: (error) => <b>{error.message}</b>,
+                  });
+                }}
+                variant="danger"
+                type="button"
+                className="mx-2"
+              >
+                Galite atsiimti įrenginį
+              </Button>
+            </Col>
+          </Row>
+        </Modal.Body>
+      </Modal>
 
       <Modal
         className="modal-event"
@@ -653,6 +967,86 @@ export default function EditService() {
             )}
           </Formik>
         </Modal.Body>
+      </Modal>
+
+      <Modal show={showProductModal} onHide={() => setShowProductModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Select Parts</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <InputGroup className="mb-3">
+              <FormControl
+                placeholder="Search by name"
+                onChange={(e) => setQuery({ ...query, name: e.target.value })}
+              />
+            </InputGroup>
+            <InputGroup className="mb-3">
+              <FormControl
+                placeholder="Category"
+                onChange={(e) =>
+                  setQuery({ ...query, category: e.target.value })
+                }
+              />
+              <FormControl
+                placeholder="Storage"
+                onChange={(e) =>
+                  setQuery({ ...query, storage: e.target.value })
+                }
+              />
+            </InputGroup>
+            <InputGroup className="mb-3">
+              <FormControl
+                placeholder="Min Stock"
+                type="number"
+                onChange={(e) =>
+                  setQuery({ ...query, minStock: e.target.value })
+                }
+              />
+              <FormControl
+                placeholder="Max Stock"
+                type="number"
+                onChange={(e) =>
+                  setQuery({ ...query, maxStock: e.target.value })
+                }
+              />
+            </InputGroup>
+          </Form>
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Part Name</th>
+                <th>Category</th>
+                <th>Storage</th>
+                <th>Stock</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product._id}>
+                  <td>{product.name}</td>
+                  <td>{product.category?.name}</td>
+                  <td>{product.storage?.locationName}</td>
+                  <td>{product.stock}</td>
+                  <td>
+                    <Button variant="success" onClick={() => addPart(product)}>
+                      Add
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowProductModal(false)}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
     </React.Fragment>
   );

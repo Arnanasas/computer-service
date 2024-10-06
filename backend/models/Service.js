@@ -12,7 +12,6 @@ const serviceSchema = new mongoose.Schema({
   hasCharger: Boolean,
   status: String,
   isContacted: Boolean,
-
   profit: Number,
   paidDate: Date,
   paymentMethod: String,
@@ -23,6 +22,15 @@ const serviceSchema = new mongoose.Schema({
   service: String,
   pvmCode: String,
   address: String,
+  isSigned: Boolean,
+  signature: String,
+  usedParts: [
+    {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // Reference to the Product schema
+      name: String, // Part name
+      quantity: Number, // Number of parts used
+    },
+  ],
 });
 
 const Service = mongoose.model("Service", serviceSchema);

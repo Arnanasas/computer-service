@@ -35,7 +35,7 @@ const app = express();
 app.use(
   express.json(),
   cors({
-    origin: ["https://admin.it112.lt", "https://it112.lt"], // Replace with your frontend's URL
+    origin: ["https://admin.it112.lt", "https://it112.lt", "*"], // Replace with your frontend's URL
     credentials: true, // Allow credentials (cookies)
   })
 );

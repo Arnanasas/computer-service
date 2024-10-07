@@ -123,6 +123,7 @@ export default function EditService() {
 
   const getAcceptanceAct = () => {
     setIsAcceptanceActShown(true);
+    console.log("Acceptance act shown");
 
     setTimeout(() => {
       const iframe = document.querySelector("iframe.acceptance-act");
@@ -637,7 +638,7 @@ export default function EditService() {
                       Patvirtinti
                     </Button>
                     <Button
-                      onClick={() => getAcceptanceAct}
+                      onClick={getAcceptanceAct}
                       variant="secondary"
                       type="button"
                       className="mx-2"
@@ -645,7 +646,7 @@ export default function EditService() {
                       Priėmimo kvitas
                     </Button>
                     <Button
-                      onClick={() => getPaymentAct}
+                      onClick={getPaymentAct}
                       variant="secondary"
                       type="button"
                       className="mx-2"

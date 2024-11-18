@@ -36,7 +36,7 @@ export default function Services() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 20; // Items per page
+  const limit = 30; // Items per page
 
   // Socket comment
   useEffect(() => {

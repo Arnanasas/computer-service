@@ -24,7 +24,7 @@ router.get("/services/:filter", verify, async (req, res) => {
     // Set filter query based on the filter parameter
     switch (filter) {
       case "all":
-        query = { status: { $ne: "Atsiskaityta" } };
+        query = { status: { $nin: ["Atsiskaityta", "Sutaisyta, pranešta"] } };
         break;
       case "to-send":
         query = { status: "Neišsiųsta" };

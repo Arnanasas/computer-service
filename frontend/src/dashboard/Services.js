@@ -32,7 +32,7 @@ export default function Services() {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [paymentAct, setPaymentAct] = useState(null);
 
-  const { logout } = useAuth();
+  const { logout, nickname } = useAuth();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -44,10 +44,24 @@ export default function Services() {
       alert("A user wrote a new comment!");
     });
 
+    socket.emit("register-tablet", nickname);
+
+    socket.on("capture-signature", (data) => {
+      const { link } = data;
+      window.location.href = link; // Redirect the tablet user to the link
+    });
+
     return () => {
       socket.off("receive-notification");
     };
   }, []);
+
+  const handleSignatureClick = (serviceID) => {
+    if (nickname === "tablet") {
+      window.location.href = `/capture-signature/${serviceID}`;
+    }
+    socket.emit("request-signature", { serviceID });
+  };
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -145,7 +159,7 @@ export default function Services() {
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
-            <h4 className="main-title mb-0">Valdymo pultas</h4>
+            <h4 className="main-title mb-0">Valdymo pultas {nickname}</h4>
           </div>
         </div>
 
@@ -218,16 +232,17 @@ export default function Services() {
                       )}
                     </td>
                     <td>
-                      <Link to={`/capture-signature/${item.id}`}>
-                        <Button
-                          variant={item.isSigned ? "success" : "warning"}
-                          size="sm"
-                          type="submit"
-                          className="mx-2"
-                        >
-                          Parašas
-                        </Button>
-                      </Link>
+                      {/* <Link to={`/capture-signature/${item.id}`}> */}
+                      <Button
+                        variant={item.isSigned ? "success" : "warning"}
+                        size="sm"
+                        type="submit"
+                        className="mx-2"
+                        onClick={() => handleSignatureClick(item.id)}
+                      >
+                        Parašas
+                      </Button>
+                      {/* </Link> */}
                     </td>
                     {filter !== "archive" && (
                       <td>

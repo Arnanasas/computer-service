@@ -4,16 +4,20 @@ import Footer from "../layouts/Footer";
 import { Card, Row, Col, Alert, Button } from "react-bootstrap";
 import { useAuth } from "../AuthContext";
 import SignatureCanvas from "react-signature-canvas";
+import { io } from "socket.io-client";
+
 import axios from "axios";
 
 import "./CaptureSignature.css";
 
+const socket = io(`${process.env.REACT_APP_SOCKET}`);
+
 export default function CaptureSignature() {
+  const { logout, nickname } = useAuth();
+
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
   const serviceId = window.location.pathname.split("/").pop();
-
-  const { logout } = useAuth();
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -40,6 +44,24 @@ export default function CaptureSignature() {
   useEffect(() => {
     switchSkin(skin);
   }, [skin]);
+
+  // Socket comment
+  useEffect(() => {
+    socket.on("receive-notification", () => {
+      alert("A user wrote a new comment!");
+    });
+
+    socket.emit("register-tablet", nickname);
+
+    socket.on("capture-signature", (data) => {
+      const { link } = data;
+      window.location.href = link; // Redirect the tablet user to the link
+    });
+
+    return () => {
+      socket.off("receive-notification");
+    };
+  }, []);
 
   const sigCanvas = useRef({});
   const [trimmedDataURL, setTrimmedDataURL] = useState(null);
@@ -124,56 +146,54 @@ export default function CaptureSignature() {
 
             {/* Signature Section */}
             <Row className="justify-content-center">
-              <Col md={8}>
-                {isSigned ? (
-                  <div>
-                    <h6 className="text-success text-center mb-3">
-                      Remontas <b>{serviceId}</b> sėkmingai pasirašytas.
-                    </h6>
-                    <div className="d-flex justify-content-center">
-                      <img
-                        src={trimmedDataURL}
-                        alt="User's signature"
-                        style={{
-                          border: "1px solid #ccc",
-                          padding: "10px",
-                          width: "100%",
-                          maxWidth: "500px",
-                          height: "auto",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="">
-                    <SignatureCanvas
-                      ref={sigCanvas}
-                      penColor="black"
-                      canvasProps={{
-                        width: 700,
-                        height: 300,
-                        className:
-                          "signatureCanvas mb-3 d-flex justify-content-center",
+              {isSigned ? (
+                <div>
+                  <h6 className="text-success text-center mb-3">
+                    Remontas <b>{serviceId}</b> sėkmingai pasirašytas.
+                  </h6>
+                  <div className="d-flex justify-content-center">
+                    <img
+                      src={trimmedDataURL}
+                      alt="User's signature"
+                      style={{
+                        border: "1px solid #ccc",
+                        padding: "10px",
+                        width: "900px",
+                        maxWidth: "500px",
+                        height: "auto",
                       }}
                     />
-                    <div className="d-flex justify-content-center">
-                      <Button
-                        variant="primary"
-                        onClick={saveSignature}
-                        className="me-2"
-                      >
-                        Pasirašyti
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={() => sigCanvas.current.clear()}
-                      >
-                        Išvalyti
-                      </Button>
-                    </div>
                   </div>
-                )}
-              </Col>
+                </div>
+              ) : (
+                <div className="">
+                  <SignatureCanvas
+                    ref={sigCanvas}
+                    penColor="black"
+                    canvasProps={{
+                      width: 700,
+                      height: 400,
+                      className:
+                        "signatureCanvas mb-3 d-flex justify-content-center",
+                    }}
+                  />
+                  <div className="d-flex justify-content-center">
+                    <Button
+                      variant="primary"
+                      onClick={saveSignature}
+                      className="me-2"
+                    >
+                      Pasirašyti
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => sigCanvas.current.clear()}
+                    >
+                      Išvalyti
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Row>
           </Card.Body>
         </Card>

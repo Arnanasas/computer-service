@@ -71,6 +71,21 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("receive-notification");
   });
 
+  socket.on("register-tablet", (nickname) => {
+    if (nickname === "tablet") {
+      socket.join("tablet-room");
+      console.log("Tablet user joined the room");
+    }
+  });
+
+  // Emit a signature capture request to the tablet user
+  socket.on("request-signature", (data) => {
+    const { serviceID } = data;
+    io.to("tablet-room").emit("capture-signature", {
+      link: `/capture-signature/${serviceID}`,
+    });
+  });
+
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });

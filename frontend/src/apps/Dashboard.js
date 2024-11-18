@@ -52,12 +52,19 @@ export default function Dashboard() {
         ); // Fetching from sales-data endpoint
         const data = response.data;
 
+        // Filter out entries with null yearMonth and sort the data by yearMonth
+        const sortedData = data
+          .filter((item) => item.yearMonth) // Exclude entries with null yearMonth
+          .sort((a, b) => {
+            const [yearA, monthA] = a.yearMonth.split("-").map(Number);
+            const [yearB, monthB] = b.yearMonth.split("-").map(Number);
+            return yearA - yearB || monthA - monthB;
+          });
+
         // Prepare Tikrasis (Actual) profit and months from yearMonth
-        const actualProfits = data.map((item) => item.totalProfit);
-        const months = data.map((item) =>
-          item.yearMonth
-            ? dayjs(`${item.yearMonth}-01`).format("MMM YYYY")
-            : "Unknown"
+        const actualProfits = sortedData.map((item) => item.totalProfit);
+        const months = sortedData.map((item) =>
+          dayjs(`${item.yearMonth}-01`).format("MMM YYYY")
         );
 
         // Example static planned profit (Planuojamas) for each month

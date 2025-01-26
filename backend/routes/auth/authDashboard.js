@@ -20,11 +20,14 @@ router.get("/services/:filter", verify, async (req, res) => {
   try {
     const filter = req.params.filter;
     let query = {};
+    let sortOption = {};
 
     // Set filter query based on the filter parameter
     switch (filter) {
       case "all":
-        query = { status: { $nin: ["Atsiskaityta", "Sutaisyta, pranešta"] } };
+        query = {
+          status: { $nin: ["Atsiskaityta", "Sutaisyta, pranešta", "jb"] },
+        };
         break;
       case "to-send":
         query = { status: "Neišsiųsta" };
@@ -36,7 +39,15 @@ router.get("/services/:filter", verify, async (req, res) => {
         query = { status: "Sutaisyta, pranešta" };
         break;
       case "archive":
-        query = { status: "Atsiskaityta" };
+        query = { status: "Atsiskaityta", paidDate: { $exists: true } };
+        sortOption = { paidDate: -1 }; // Sort by paidDate, newest to latest
+        break;
+      case "archive-notpaid":
+        query = { status: "Atsiskaityta", paidDate: { $exists: false } };
+        break;
+      case "jb":
+        query = { status: "jb" };
+        sortOption = { paidDate: -1 }; // Sort by paidDate, newest to latest
         break;
       default:
         return res.status(400).json({ error: "Invalid filter" });
@@ -50,8 +61,9 @@ router.get("/services/:filter", verify, async (req, res) => {
     // Count total documents for the current filter query
     const totalServices = await Service.countDocuments(query);
 
-    // Fetch services with pagination
+    // Fetch services with pagination and sorting
     const services = await Service.find(query)
+      .sort(sortOption) // Apply sorting if applicable
       .skip(skip) // Skip previous pages' items
       .limit(limit) // Limit the number of items per request
       .exec();
@@ -107,11 +119,24 @@ router.put("/services/:id", verify, async (req, res) => {
 
     const service = await Service.findOne({ id: serviceId });
 
-    const paymentId =
-      (service && service.paymentId) ||
-      (req.body.paymentMethod
+    let paymentId = service ? service.paymentId : null;
+
+    // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
+    if (
+      service &&
+      req.body.paymentMethod &&
+      service.paymentMethod !== req.body.paymentMethod &&
+      (service.paymentMethod === "kortele" ||
+        service.paymentMethod === "grynais") &&
+      (req.body.paymentMethod === "kortele" ||
+        req.body.paymentMethod === "grynais")
+    ) {
+      paymentId = await getNewPaymentId(req.body.paymentMethod);
+    } else if (!service || !service.paymentId) {
+      paymentId = req.body.paymentMethod
         ? await getNewPaymentId(req.body.paymentMethod)
-        : null);
+        : null;
+    }
 
     // Find the service by ID and update it
     const updatedService = await Service.findOneAndUpdate(

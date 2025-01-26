@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
+import BlackActDocument from "../documentTemplates/BlackAct";
 import { useAuth } from "../AuthContext";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -198,6 +199,15 @@ export default function EditService() {
     }, 600);
   };
 
+  const printBlackAct = () => {
+    setIsBlackActShown(true);
+
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe.black-act");
+      iframe.contentWindow.print();
+    }, 600);
+  };
+
   // Add Parts
 
   const [showProductModal, setShowProductModal] = useState(false);
@@ -313,6 +323,36 @@ export default function EditService() {
       updatePartStock(id, -quantityDifference); // Negative when reducing stock
     }
   };
+
+  // New state variables for BlackAct
+  const [showBlackActModal, setShowBlackActModal] = useState(false);
+  const [blackActData, setBlackActData] = useState(null);
+  const [isBlackActShown, setIsBlackActShown] = useState(false);
+
+  // Function to handle BlackAct button click
+  const handleBlackAct = () => {
+    setShowBlackActModal(true);
+  };
+
+  // Function to handle modal close
+  const handleCloseBlackActModal = () => {
+    setShowBlackActModal(false);
+  };
+
+  // Function to handle BlackAct generation (optional: trigger print)
+  useEffect(() => {
+    if (isBlackActShown) {
+      // Optional: Trigger print dialog automatically
+      setTimeout(() => {
+        const iframe = document.querySelector("iframe.black-act");
+        iframe.contentWindow.print();
+      }, 600);
+
+      printBlackAct();
+      // Optionally, hide the PDFViewer after printing
+      // setIsBlackActShown(false);
+    }
+  }, [isBlackActShown]);
 
   return (
     <React.Fragment>
@@ -687,6 +727,15 @@ export default function EditService() {
                 >
                   Pridėti dalis
                 </Button>
+
+                <Button
+                  variant="primary"
+                  type="button"
+                  className="mx-2 my-2"
+                  onClick={handleBlackAct}
+                >
+                  BlackAct
+                </Button>
               </Col>
             </Row>
           </Card.Body>
@@ -1049,6 +1098,114 @@ export default function EditService() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal
+        show={showBlackActModal}
+        onHide={handleCloseBlackActModal}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Black Act Information</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Formik
+            initialValues={{
+              service: "Kompiuterio remontas",
+              issueDescription:
+                "Buvo rasta problema X, kurią reikia išspręsti. Problema išspręsta, kompiuteris veikia tinkamai.",
+            }}
+            validationSchema={yup.object({
+              service: yup.string().required("Service is required"),
+              issueDescription: yup
+                .string()
+                .required("Issue Description is required"),
+            })}
+            onSubmit={async (values) => {
+              const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+              const combinedData = {
+                price: data.price,
+                serviceId: data.id,
+                service: values.service,
+                issueDescription: values.issueDescription,
+                date: today,
+                name: data.name,
+              };
+              try {
+                const response = await axios.put(
+                  `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+                  { ...data, status: "jb", paidDate: combinedData.date },
+                  {
+                    withCredentials: true,
+                  }
+                );
+              } catch (error) {
+                console.log(error);
+              }
+              setBlackActData(combinedData);
+              setShowBlackActModal(false);
+              printBlackAct();
+            }}
+          >
+            {({ handleSubmit, handleChange, values, touched, errors }) => (
+              <Form onSubmit={handleSubmit}>
+                <Form.Group controlId="service" className="mb-3">
+                  <Form.Label>Service</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="service"
+                    value={values.service}
+                    onChange={handleChange}
+                    isInvalid={touched.service && !!errors.service}
+                    placeholder="Enter service"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.service}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Form.Group controlId="issueDescription" className="mb-3">
+                  <Form.Label>Issue Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="issueDescription"
+                    value={values.issueDescription}
+                    onChange={handleChange}
+                    isInvalid={
+                      touched.issueDescription && !!errors.issueDescription
+                    }
+                    placeholder="Describe the issue"
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.issueDescription}
+                  </Form.Control.Feedback>
+                </Form.Group>
+
+                <Button variant="primary" type="submit">
+                  Generate BlackAct
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </Modal.Body>
+      </Modal>
+
+      {isBlackActShown && blackActData && (
+        <PDFViewer
+          className="black-act d-none"
+          // style={{ width: "100%", height: "600px", marginTop: "20px" }}
+        >
+          <BlackActDocument
+            name={blackActData.name}
+            price={blackActData.price}
+            issueDescription={blackActData.issueDescription}
+            date={blackActData.date}
+            service={blackActData.service}
+            serviceId={blackActData.serviceId}
+          />
+        </PDFViewer>
+      )}
     </React.Fragment>
   );
 }

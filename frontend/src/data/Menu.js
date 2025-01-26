@@ -48,6 +48,16 @@ const applicationsMenu = [
     icon: "ri-inbox-unarchive-line",
   },
   {
+    label: "Neapmokėta",
+    link: "/services/archive-notpaid",
+    icon: "ri-archive-drawer-line",
+  },
+  {
+    label: "JB",
+    link: "/services/jb",
+    icon: "ri-money-dollar-circle-line",
+  },
+  {
     label: "Statistika",
     link: "/apps/statistics",
     icon: "ri-bar-chart-box-line",

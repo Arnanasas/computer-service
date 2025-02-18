@@ -331,6 +331,7 @@ export default function Services() {
             pvmCode={paymentAct.pvmCode}
             address={paymentAct.address}
             service={paymentAct.service}
+            clientName={data.name}
           />
         </PDFViewer>
       )}

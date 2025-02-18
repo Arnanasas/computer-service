@@ -1,4 +1,5 @@
 import ReactDOM from "react-dom";
+import { formatCurrencyInWords } from "../assets/helpers";
 import {
   Document,
   Page,
@@ -9,14 +10,29 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
+// Font.register({
+//   family: "Gabarito",
+//   src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
+// });
+
+// Font.register({
+//   family: "Gabarito-Medium",
+//   src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
+// });
+
 Font.register({
-  family: "Gabarito",
-  src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
+  family: "Inter",
+  src: require("../assets/fonts/inter/Inter_24pt-Regular.ttf"),
 });
 
 Font.register({
-  family: "Gabarito-Medium",
-  src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
+  family: "Inter-Bold",
+  src: require("../assets/fonts/inter/Inter_24pt-Bold.ttf"),
+});
+
+Font.register({
+  family: "Inter-Thin",
+  src: require("../assets/fonts/inter/Inter_24pt-Light.ttf"),
 });
 
 // Create styles
@@ -24,11 +40,17 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
     paddingHorizontal: 25,
-    fontFamily: "Gabarito",
-    fontSize: 11,
+    fontFamily: "Inter",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   fontBold: {
-    fontFamily: "Gabarito-Medium",
+    fontFamily: "Inter-Bold",
+    letterSpacing: 0.5,
+  },
+  fontThin: {
+    fontFamily: "Inter-Thin",
+    letterSpacing: 0.5,
   },
   textCenter: {
     textAlign: "center",
@@ -109,6 +131,15 @@ const styles = StyleSheet.create({
     width: 130,
     marginHorizontal: 15,
   },
+  textLeft: {
+    textAlign: "left",
+  },
+  textRight: {
+    textAlign: "right",
+  },
+  fontLarge: {
+    fontSize: 16,
+  },
 });
 
 const PaymentActDocument = ({
@@ -122,75 +153,153 @@ const PaymentActDocument = ({
   pvmCode,
   address,
   service,
+  clientName,
 }) => (
   <Document>
     <Page size="A4" style={styles.page}>
-      <View style={styles.marginBottom2}>
-        <Image src={require("../assets/img/logo.png")} style={styles.logo} />
+      <View style={[styles.flex, styles.justifyBetween]}>
+        <View style={styles.marginBottom2}>
+          <Image src={require("../assets/img/logo.png")} style={styles.logo} />
+        </View>
+
+        <View style={[styles.marginBottom1]}>
+          <View style={{ flex: 1, alignItems: "flex-end" }}>
+            <Text style={[styles.fontBold, styles.fontLarge]}>
+              PVM sąskaita faktūra
+            </Text>
+            <Text style={[styles.fontLarge, styles.fontThin]}>
+              Serija {paymentMethod === "kortele" ? "CRD" : "GRN"}-{paymentId}
+            </Text>
+            <Text style={styles.fontThin}>{paidDate.substring(0, 10)}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={[styles.flex, styles.justifyBetween, styles.marginBottom4]}>
         <View style={styles.w50}>
           <View style={styles.marginBottom1}>
-            <Text style={styles.fontBold}>Paslaugos tiekėjas:</Text>
-            <Text>MB „IT112“</Text>
+            <Text style={[styles.fontBold, styles.marginBottom1]}>
+              Tiekėjas:
+            </Text>
+            <Text style={styles.fontBold}>IT112, MB</Text>
             <Text>Įm. k. 306561580</Text>
             <Text>PVM kodas: LT100016378016</Text>
             <Text>Adresas: Kalvarijų g. 2, Vilnius</Text>
           </View>
 
           <View>
-            <Text style={styles.fontBold}>Įmonės sąskaita:</Text>
+            <Text style={[styles.fontBold, styles.marginBottom1]}>
+              Įmonės sąskaita:
+            </Text>
             <Text>AB Swedbank,</Text>
             <Text>LT077300010181630587</Text>
           </View>
         </View>
 
         <View style={styles.w50}>
-          <Text style={styles.fontBold}>Paslaugos pirkėjas:</Text>
-          <Text>
-            {clientType === "privatus" ? "Privatus klientas" : companyName}
+          <Text style={[styles.fontBold, styles.marginBottom1]}>Pirkėjas:</Text>
+          <Text style={styles.fontBold}>
+            {clientType === "privatus"
+              ? clientName || "Privatus klientas"
+              : companyName}
           </Text>
-          <Text>
-            Įmonės/asmens kodas: {clientType !== "privatus" ? companyCode : ""}
-          </Text>
-          <Text>PVM kodas: {clientType !== "privatus" ? pvmCode : ""}</Text>
-          <Text>Adresas: {clientType !== "privatus" ? address : ""}</Text>
+          {clientType !== "privatus" && (
+            <>
+              <Text>Įmonės kodas: {companyCode}</Text>
+              <Text>PVM kodas: {pvmCode}</Text>
+              <Text>Adresas: {address}</Text>
+            </>
+          )}
         </View>
       </View>
 
-      <View style={styles.marginBottom1}>
+      {/* <View style={styles.marginBottom1}>
         <Text style={styles.fontBold}>PVM SĄSKAITA - FAKTŪRA</Text>
         <Text>
           Serija {paymentMethod === "kortele" ? "CRD" : "GRN"}-{paymentId}
         </Text>
         <Text>{paidDate.substring(0, 10)}</Text>
-      </View>
+      </View> */}
 
       <Text style={styles.fontBold}>Atsiskaityti už:</Text>
 
       <View style={styles.section}>
-        <View style={styles.table}>
-          <View style={styles.tableRow}>
-            <View style={[styles.tableCol, styles.tableColName]}>
-              <Text style={styles.cell}>{service}</Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.cell}>
-                Kaina: {(price / 1.21).toFixed(2)} €
-              </Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.cell}>
-                PVM 21%: {(price - (price / 1.21).toFixed(2)).toFixed(2)} €
-              </Text>
-            </View>
-            <View style={styles.tableCol}>
-              <Text style={styles.cell}>Viso: {price} €</Text>
-            </View>
+        <View style={{ marginBottom: 10 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              borderBottomWidth: 0.5,
+              borderColor: "#000",
+              paddingVertical: 5,
+            }}
+          >
+            <Text style={{ flex: 2, fontWeight: "bold", textAlign: "left" }}>
+              Pavadinimas
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
+              Kiekis
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
+              Kaina
+            </Text>
+            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
+              Suma
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              paddingVertical: 5,
+              borderBottomWidth: 0.5,
+            }}
+          >
+            <Text style={{ flex: 2, textAlign: "left" }}>{service}</Text>
+            <Text style={{ flex: 1, textAlign: "center" }}>1</Text>
+            <Text style={{ flex: 1, textAlign: "center" }}>
+              {(price / 1.21).toFixed(2)} €
+            </Text>
+            <Text style={{ flex: 1, textAlign: "center" }}>
+              {(price / 1.21).toFixed(2)} €
+            </Text>
           </View>
         </View>
       </View>
+
+      <View
+        style={[
+          styles.flex,
+          { justifyContent: "flex-end", flexDirection: "column" },
+        ]}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+          <View style={{ flexDirection: "column", alignItems: "flex-end" }}>
+            <Text style={[styles.cell, { textAlign: "right" }]}>Suma:</Text>
+            <Text style={[styles.cell, { textAlign: "right" }]}>PVM 21%:</Text>
+            <Text
+              style={[styles.cell, styles.fontBold, { textAlign: "right" }]}
+            >
+              IŠ VISO:
+            </Text>
+          </View>
+          <View style={{ flexDirection: "column", alignItems: "flex-end" }}>
+            <Text style={[styles.cell, { textAlign: "right" }]}>
+              {(price / 1.21).toFixed(2)} EUR
+            </Text>
+            <Text style={[styles.cell, { textAlign: "right" }]}>
+              {(price - (price / 1.21).toFixed(2)).toFixed(2)} EUR
+            </Text>
+            <Text
+              style={[styles.cell, styles.fontBold, { textAlign: "right" }]}
+            >
+              {(price * 1).toFixed(2)} EUR
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <Text style={styles.marginBottom1}>
+        Suma žodžiais: {formatCurrencyInWords(price)}
+      </Text>
 
       <Text style={styles.marginBottom4}>
         Sumokėta {paymentMethod === "kortele" ? "kortele" : "grynais"}.
@@ -198,11 +307,15 @@ const PaymentActDocument = ({
 
       <View style={[styles.flex, styles.justifyBetween]}>
         <View style={styles.signaturePlaceholder}>
-          <Text style={styles.marginBottom2}>Darbuotojo parašas</Text>
+          <Text style={[styles.marginBottom2, { paddingTop: 8 }]}>
+            Darbuotojo parašas
+          </Text>
         </View>
 
         <View style={styles.signaturePlaceholder}>
-          <Text style={styles.marginBottom2}>Užsakovo parašas</Text>
+          <Text style={[styles.marginBottom2, { paddingTop: 8 }]}>
+            Užsakovo parašas
+          </Text>
         </View>
       </View>
     </Page>

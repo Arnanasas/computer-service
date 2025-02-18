@@ -1010,6 +1010,7 @@ export default function EditService() {
                       pvmCode={values.pvmCode}
                       address={values.address}
                       service={values.service}
+                      clientName={data.name}
                     />
                   </PDFViewer>
                 )}

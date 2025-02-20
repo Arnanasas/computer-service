@@ -9,14 +9,29 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
+// Font.register({
+//   family: "Gabarito",
+//   src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
+// });
+
+// Font.register({
+//   family: "Gabarito-Medium",
+//   src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
+// });
+
 Font.register({
-  family: "Gabarito",
-  src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
+  family: "Inter",
+  src: require("../assets/fonts/inter/Inter_24pt-Regular.ttf"),
 });
 
 Font.register({
-  family: "Gabarito-Medium",
-  src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
+  family: "Inter-Bold",
+  src: require("../assets/fonts/inter/Inter_24pt-Bold.ttf"),
+});
+
+Font.register({
+  family: "Inter-Thin",
+  src: require("../assets/fonts/inter/Inter_24pt-Light.ttf"),
 });
 
 // Create styles
@@ -24,11 +39,11 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 20,
     paddingHorizontal: 25,
-    fontFamily: "Gabarito",
+    fontFamily: "Inter",
     fontSize: 11,
   },
   fontBold: {
-    fontFamily: "Gabarito-Medium",
+    fontFamily: "Inter-Bold",
   },
   textCenter: {
     textAlign: "center",

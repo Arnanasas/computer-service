@@ -96,16 +96,31 @@ router.get("/service/:id", verify, async (req, res) => {
   }
 });
 
+const path = require("path");
+
 router.delete("/services/:id", verify, async (req, res) => {
   try {
     const serviceId = req.params.id;
 
-    // Find the service by ID and remove it
-    const deletedService = await Service.findOneAndRemove({ id: serviceId });
+    // Find the service by ID
+    const service = await Service.findOne({ id: serviceId });
 
-    if (!deletedService) {
+    if (!service) {
       return res.status(404).json({ error: "Service not found" });
     }
+
+    if (service.status === "Atsiskaityta" || service.status === "jb") {
+      const logMessage = `Service with ID ${serviceId}, status ${
+        service.status
+      }, price ${
+        service.price
+      }, and deletion date ${new Date().toISOString()} was deleted.\n`;
+      const logFilePath = path.join(__dirname, "deletion.log");
+      fs.appendFileSync(logFilePath, logMessage, "utf8");
+    }
+
+    // Remove the service
+    const deletedService = await Service.findOneAndRemove({ id: serviceId });
 
     res.status(200).json({ message: "Service deleted successfully" });
   } catch (err) {
@@ -166,9 +181,9 @@ router.post("/services", verify, async (req, res) => {
 
     let lastPhoneNumberDigit = serviceData.number.slice(-1);
 
-    const customId = `${currentDate}${lastPhoneNumberDigit}-${
-      devicesFixedToday + 1
-    }`;
+    const totalServices = await Service.countDocuments();
+    const customId =
+      totalServices < 1000 ? `0${totalServices + 1}` : `${totalServices + 1}`;
     const isSigned = false;
 
     const serviceWithId = { ...serviceData, id: customId, isSigned: isSigned };

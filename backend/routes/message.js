@@ -89,7 +89,7 @@ router.post("/pick-up", verify, async (req, res) => {
 
     // Construct the phone number with a plus sign (assuming country code is needed)
     const formattedPhoneNumber = `+370${phoneNumber}`;
-    const bodyMessage = `Jūsų įrenginys (Nr. ${serviceId}) yra sutaisytas. Remonto kaina ${price}€. Atsiimti galite adresu Kalvarijų g. 2, Vilnius. I-V 10-19h, IV 10-15h.`;
+    const bodyMessage = `Jūsų įrenginys (Nr. ${serviceId}) yra sutaisytas. Remonto kaina ${price}€. Atsiimti galite adresu Kalvarijų g. 2, Vilnius. I-V 9-18h`;
 
     // Send message using Twilio
     const messageResponse = await client.messages.create({

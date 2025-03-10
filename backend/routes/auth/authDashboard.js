@@ -19,35 +19,48 @@ const router = require("express").Router();
 router.get("/services/:filter", verify, async (req, res) => {
   try {
     const filter = req.params.filter;
-    let query = {};
+    let query = { isDeleted: { $ne: true } }; // Exclude deleted services by default
     let sortOption = {};
 
     // Set filter query based on the filter parameter
     switch (filter) {
       case "all":
         query = {
+          ...query, // Keep the isDeleted filter
           status: { $nin: ["Atsiskaityta", "Sutaisyta, pranešta", "jb"] },
         };
         break;
       case "to-send":
-        query = { status: "Neišsiųsta" };
+        query = { ...query, status: "Neišsiųsta" };
         break;
       case "elsewhere":
-        query = { status: "Taisoma kitur" };
+        query = { ...query, status: "Taisoma kitur" };
         break;
       case "waiting":
-        query = { status: "Sutaisyta, pranešta" };
+        query = { ...query, status: "Sutaisyta, pranešta" };
         break;
       case "archive":
-        query = { status: "Atsiskaityta", paidDate: { $exists: true } };
+        query = {
+          ...query,
+          status: "Atsiskaityta",
+          paidDate: { $exists: true },
+        };
         sortOption = { paidDate: -1 }; // Sort by paidDate, newest to latest
         break;
       case "archive-notpaid":
-        query = { status: "Atsiskaityta", paidDate: { $exists: false } };
+        query = {
+          ...query,
+          status: "Atsiskaityta",
+          paidDate: { $exists: false },
+        };
         break;
       case "jb":
-        query = { status: "jb" };
+        query = { ...query, status: "jb" };
         sortOption = { paidDate: -1 }; // Sort by paidDate, newest to latest
+        break;
+      case "deleted": // Add a new filter to view deleted services
+        query = { isDeleted: true };
+        sortOption = { deletedAt: -1 }; // Sort by deletion date, newest first
         break;
       default:
         return res.status(400).json({ error: "Invalid filter" });
@@ -119,10 +132,17 @@ router.delete("/services/:id", verify, async (req, res) => {
       fs.appendFileSync(logFilePath, logMessage, "utf8");
     }
 
-    // Remove the service
-    const deletedService = await Service.findOneAndRemove({ id: serviceId });
+    // Instead of removing the service, mark it as deleted
+    const updatedService = await Service.findOneAndUpdate(
+      { id: serviceId },
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+      { new: true }
+    );
 
-    res.status(200).json({ message: "Service deleted successfully" });
+    res.status(200).json({ message: "Service marked as deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -176,14 +196,19 @@ router.post("/services", verify, async (req, res) => {
     // Calculate the number of devices fixed on the current date
     const currentDate = moment().format("YYMMDD");
     const devicesFixedToday = await Service.count({
-      id: { $regex: `^${currentDate}` },
+      createdAt: {
+        $gte: moment().startOf("day").toDate(),
+        $lte: moment().endOf("day").toDate(),
+      },
     });
 
     let lastPhoneNumberDigit = serviceData.number.slice(-1);
 
     const totalServices = await Service.countDocuments();
     const customId =
-      totalServices < 1000 ? `0${totalServices + 1}` : `${totalServices + 1}`;
+      totalServices < 1000
+        ? `0${totalServices + 1}-${devicesFixedToday + 1}`
+        : `${totalServices + 1}-${devicesFixedToday + 1}`;
     const isSigned = false;
 
     const serviceWithId = { ...serviceData, id: customId, isSigned: isSigned };

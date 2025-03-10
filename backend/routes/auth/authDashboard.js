@@ -115,29 +115,41 @@ router.delete("/services/:id", verify, async (req, res) => {
   try {
     const serviceId = req.params.id;
 
-    // Find the service by ID
-    const service = await Service.findOne({ id: serviceId });
+    // Find all services with this ID (there shouldn't be duplicates, but just in case)
+    const services = await Service.find({ id: serviceId });
 
-    if (!service) {
+    if (!services || services.length === 0) {
       return res.status(404).json({ error: "Service not found" });
     }
 
-    if (service.status === "Atsiskaityta" || service.status === "jb") {
-      const logMessage = `Service with ID ${serviceId}, status ${
-        service.status
-      }, price ${
-        service.price
-      }, and deletion date ${new Date().toISOString()} was deleted.\n`;
-      const logFilePath = path.join(__dirname, "deletion.log");
-      fs.appendFileSync(logFilePath, logMessage, "utf8");
+    // Log deletion for services with specific statuses
+    for (const service of services) {
+      if (service.status === "Atsiskaityta" || service.status === "jb") {
+        const logMessage = `Service with ID ${serviceId}, status ${
+          service.status
+        }, price ${
+          service.price
+        }, and deletion date ${new Date().toISOString()} was deleted.\n`;
+        const logFilePath = path.join(__dirname, "deletion.log");
+        fs.appendFileSync(logFilePath, logMessage, "utf8");
+      }
     }
 
-    // Update the existing service directly instead of using findOneAndUpdate
-    service.isDeleted = true;
-    service.deletedAt = new Date();
-    await service.save();
+    // Mark all services with this ID as deleted
+    const updateResult = await Service.updateMany(
+      { id: serviceId },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      }
+    );
 
-    res.status(200).json({ message: "Service marked as deleted successfully" });
+    res.status(200).json({
+      message: "Service(s) marked as deleted successfully",
+      count: updateResult.modifiedCount,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -189,24 +201,32 @@ router.post("/services", verify, async (req, res) => {
     const serviceData = req.body;
 
     // Calculate the number of devices fixed on the current date
-    const currentDate = moment().format("YYMMDD");
+    // Include ALL services (even deleted ones) for this count
     const devicesFixedToday = await Service.count({
       createdAt: {
         $gte: moment().startOf("day").toDate(),
         $lte: moment().endOf("day").toDate(),
       },
+      // No isDeleted filter here - we want to count ALL services created today
     });
 
-    let lastPhoneNumberDigit = serviceData.number.slice(-1);
+    // Get total count of ALL services (including deleted ones)
+    const totalServices = await Service.countDocuments({});
 
-    const totalServices = await Service.countDocuments();
+    // Generate a unique ID that won't conflict with deleted services
     const customId =
       totalServices < 1000
         ? `0${totalServices + 1}-${devicesFixedToday + 1}`
         : `${totalServices + 1}-${devicesFixedToday + 1}`;
+
     const isSigned = false;
 
-    const serviceWithId = { ...serviceData, id: customId, isSigned: isSigned };
+    const serviceWithId = {
+      ...serviceData,
+      id: customId,
+      isSigned: isSigned,
+      isDeleted: false, // Explicitly set this to false for new services
+    };
 
     const service = new Service(serviceWithId);
     const savedService = await service.save();

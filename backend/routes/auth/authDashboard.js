@@ -132,15 +132,10 @@ router.delete("/services/:id", verify, async (req, res) => {
       fs.appendFileSync(logFilePath, logMessage, "utf8");
     }
 
-    // Instead of removing the service, mark it as deleted
-    const updatedService = await Service.findOneAndUpdate(
-      { id: serviceId },
-      {
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
-      { new: true }
-    );
+    // Update the existing service directly instead of using findOneAndUpdate
+    service.isDeleted = true;
+    service.deletedAt = new Date();
+    await service.save();
 
     res.status(200).json({ message: "Service marked as deleted successfully" });
   } catch (err) {

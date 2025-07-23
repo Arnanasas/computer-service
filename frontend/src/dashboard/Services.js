@@ -13,12 +13,16 @@ import {
   Pagination,
   Modal,
   Button,
+  Form,
+  Row,
+  Col,
+  Accordion,
 } from "react-bootstrap";
 import { PDFViewer } from "@react-pdf/renderer";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
 
-import { FaEdit, FaTrash, FaPhone, FaChargingStation } from "react-icons/fa"; // Import React icons
+import { FaEdit, FaTrash, FaPhone, FaChargingStation, FaSearch } from "react-icons/fa"; // Import React icons
 import axios from "axios";
 import io from "socket.io-client";
 
@@ -37,6 +41,10 @@ export default function Services() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 30; // Items per page
+
+  // Search state
+  const [searchPhone, setSearchPhone] = useState("");
+  const [searchServiceId, setSearchServiceId] = useState("");
 
   // Socket comment
   useEffect(() => {
@@ -84,8 +92,8 @@ export default function Services() {
   };
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to the first page when the filter changes
-  }, [filter]);
+    setCurrentPage(1); // Reset to the first page when the filter or search changes
+  }, [filter, searchPhone, searchServiceId]);
 
   const handleDelete = (serviceId) => {
     const isConfirmed = window.confirm("Ar tikrai ištrinti šį servisą?");
@@ -116,10 +124,23 @@ export default function Services() {
   }, [skin]);
 
   useEffect(() => {
-    // Fetch data with pagination
+    // Fetch data with pagination and search
+    const searchParams = {
+      page: currentPage,
+      limit,
+    };
+
+    if (searchPhone.trim()) {
+      searchParams.phone = searchPhone.trim();
+    }
+
+    if (searchServiceId.trim()) {
+      searchParams.serviceId = searchServiceId.trim();
+    }
+
     axios
       .get(`${process.env.REACT_APP_URL}/dashboard/services/${filter}`, {
-        params: { page: currentPage, limit },
+        params: searchParams,
         withCredentials: true,
       })
       .then((response) => {
@@ -130,7 +151,7 @@ export default function Services() {
         console.error("Error fetching data:", error);
         // logout();
       });
-  }, [filter, currentPage]);
+  }, [filter, currentPage, searchPhone, searchServiceId]);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -177,6 +198,55 @@ export default function Services() {
           </Modal.Body>
         </Modal>
 
+        {/* Search Form */}
+        <Accordion className="mt-3">
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>
+              <FaSearch className="me-2" />
+              Paieška
+            </Accordion.Header>
+            <Accordion.Body>
+              <Row>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Telefono numeris</Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="Įveskite telefono numerį"
+                      value={searchPhone}
+                      onChange={(e) => setSearchPhone(e.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Serviso ID</Form.Label>
+                    <Form.Control
+                      type="text"
+                      placeholder="Įveskite serviso ID"
+                      value={searchServiceId}
+                      onChange={(e) => setSearchServiceId(e.target.value)}
+                    />
+                  </Form.Group>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSearchPhone("");
+                      setSearchServiceId("");
+                    }}
+                  >
+                    Išvalyti
+                  </Button>
+                </Col>
+              </Row>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
+
         <Card className="card-one mt-3">
           <Card.Header>
             <Card.Title as="h6">Aktyvūs servisai</Card.Title>
@@ -185,7 +255,7 @@ export default function Services() {
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th style={{ width: "90px" }}>ID</th>
                   <th>Vardas</th>
                   <th>Numeris</th>
                   <th>Modelis</th>

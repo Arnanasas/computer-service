@@ -66,6 +66,19 @@ router.get("/services/:filter", verify, async (req, res) => {
         return res.status(400).json({ error: "Invalid filter" });
     }
 
+    // Add search functionality
+    const { phone, serviceId } = req.query;
+
+    // Phone search - search in phone number field (supports partial match from the end)
+    if (phone && phone.trim() !== "") {
+      query.number = { $regex: phone.trim() + "$", $options: "i" }; // Match phone numbers ending with the search term
+    }
+
+    // Service ID search - search in service ID field (supports partial match)
+    if (serviceId && serviceId.trim() !== "") {
+      query.id = { $regex: serviceId.trim(), $options: "i" }; // Case-insensitive partial match in "id" field
+    }
+
     // Extract page and limit from query parameters with default values
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -199,15 +212,11 @@ router.put("/services/:id", verify, async (req, res) => {
 router.post("/services", verify, async (req, res) => {
   try {
     const serviceData = req.body;
-
-    // Calculate the number of devices fixed on the current date
-    // Include ALL services (even deleted ones) for this count
     const devicesFixedToday = await Service.count({
       createdAt: {
         $gte: moment().startOf("day").toDate(),
         $lte: moment().endOf("day").toDate(),
       },
-      // No isDeleted filter here - we want to count ALL services created today
     });
 
     // Get total count of ALL services (including deleted ones)
@@ -442,6 +451,24 @@ router.get("/dashboard-stats", async (req, res) => {
         ? "up"
         : "down";
 
+    // 3. Sum of prices for active services (not deleted, not in excluded statuses)
+    const activePriceSum = await Service.aggregate([
+      { 
+        $match: { 
+          isDeleted: { $ne: true },
+          status: { $nin: ["Atsiskaityta", "Sutaisyta, pranešta", "jb"] }
+        } 
+      },
+      {
+        $addFields: {
+          numericPrice: { $toDouble: "$price" }
+        }
+      },
+      { $group: { _id: null, totalPrice: { $sum: "$numericPrice" } } },
+    ]);
+
+    const totalActivePrice = activePriceSum[0]?.totalPrice || 0;
+
     // Prepare the response
     const response = [
       {
@@ -457,6 +484,13 @@ router.get("/dashboard-stats", async (req, res) => {
         value: `${averageProfitPerClientThisMonth.toFixed(2)} €`,
         percent: Math.abs(profitPercentageChange.toFixed(1)),
         status: profitStatus,
+      },
+      {
+        label: "Laukiama atsiskaitymų suma",
+        icon: "ri-money-euro-circle-line",
+        value: `${totalActivePrice.toFixed(2)} €`,
+        percent: "0",
+        status: "up",
       },
     ];
 

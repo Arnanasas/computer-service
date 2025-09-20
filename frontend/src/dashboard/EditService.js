@@ -23,6 +23,7 @@ import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import BlackActDocument from "../documentTemplates/BlackAct";
+import DoneJobActDocument from "../documentTemplates/DoneJobAct";
 import { useAuth } from "../AuthContext";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -45,6 +46,7 @@ export default function EditService() {
   });
   const [isAcceptanceActShown, setIsAcceptanceActShown] = useState(false);
   const [isPaymentActShown, setIsPaymentActShown] = useState(false);
+  const [isDoneJobActShown, setIsDoneJobActShown] = useState(false);
   const [isPaymentModalShown, setIsPaymentModalShown] = useState(false);
   const [isMessageModalShown, setIsMessageModalShown] = useState(false);
 
@@ -129,6 +131,19 @@ export default function EditService() {
     setTimeout(() => {
       const iframe = document.querySelector("iframe.acceptance-act");
       iframe.contentWindow.print();
+    }, 600);
+  };
+
+  const getDoneJobAct = () => {
+    setIsDoneJobActShown(true);
+    console.log("Done job act shown");
+
+    setTimeout(() => {
+      const iframe = document.querySelector("iframe.done-job-act");
+      if (iframe && iframe.contentWindow) {
+        try { iframe.contentWindow.focus(); } catch (e) {}
+        iframe.contentWindow.print();
+      }
     }, 600);
   };
 
@@ -693,7 +708,35 @@ export default function EditService() {
                     >
                       Mokėjimo kvitas
                     </Button>
+                    <Button
+                      onClick={getDoneJobAct}
+                      variant="secondary"
+                      type="button"
+                      className="mx-2"
+                      disabled={!data.paidDate}
+                    >
+                      Atliktų darbų aktas
+                    </Button>
                   </Form>
+
+                  {isDoneJobActShown && (
+                  <PDFViewer className="done-job-act d-none">
+                    <DoneJobActDocument
+                      price={Number(values.price)}
+                      serviceId={data.id || serviceId}
+                      paymentMethod={data.paymentMethod || "kortele"}
+                      paymentId={data.paymentId}
+                      clientType={data.clientType || "privatus"}
+                      paidDate={data.paidDate || ""}
+                      companyName={data.companyName || ""}
+                      companyCode={data.companyCode || ""}
+                      pvmCode={data.pvmCode || ""}
+                      address={data.address || ""}
+                      service={data.service || "Kompiuterio remontas"}
+                      clientName={values.name || data.name}
+                    />
+                  </PDFViewer>
+                )}
 
                   {isAcceptanceActShown && (
                     <PDFViewer className="acceptance-act d-none">
@@ -815,7 +858,9 @@ export default function EditService() {
                 );
 
                 setData((data) => ({ ...data, ...values, ...response.data }));
-                printPaymentAct();
+                if (values.needPVM) {
+                  printPaymentAct();
+                }
               } catch (error) {
                 console.log(error);
               }
@@ -836,10 +881,11 @@ export default function EditService() {
               service: data.service || "Kompiuterio remontas",
               price: data.price,
               failure: data.failure,
+              needPVM: Boolean(data.needPVM),
             }}
             enableReinitialize={true}
           >
-            {({ handleSubmit, handleChange, values, touched, errors }) => (
+            {({ handleSubmit, handleChange, values, touched, errors, setFieldValue }) => (
               <>
                 <Form onSubmit={handleSubmit}>
                   <Row>
@@ -869,7 +915,14 @@ export default function EditService() {
                           id="clientType"
                           name="clientType"
                           value={values.clientType}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const newClientType = e.target.value;
+                            setFieldValue("clientType", newClientType);
+                            const newNeedPVM =
+                              newClientType === "juridinis" ||
+                              values.paymentMethod === "grynais";
+                            setFieldValue("needPVM", newNeedPVM);
+                          }}
                         >
                           <option value="privatus">Privatus</option>
                           <option value="juridinis">Juridinis</option>
@@ -889,7 +942,14 @@ export default function EditService() {
                           id="paymentMethod"
                           name="paymentMethod"
                           value={values.paymentMethod}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            const newPaymentMethod = e.target.value;
+                            setFieldValue("paymentMethod", newPaymentMethod);
+                            const newNeedPVM =
+                              values.clientType === "juridinis" ||
+                              newPaymentMethod === "grynais";
+                            setFieldValue("needPVM", newNeedPVM);
+                          }}
                         >
                           <option value="kortele">Kortelė</option>
                           <option value="grynais">Grynais</option>
@@ -991,6 +1051,19 @@ export default function EditService() {
                       </Col>
                     </Row>
                   )}
+
+                  <Form.Group controlId="needPVM">
+                    <div className="mb-3">
+                      <Form.Check
+                        type="switch"
+                        label="Reikia PVM SF?"
+                        id="needPVM"
+                        name="needPVM"
+                        checked={values.needPVM}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </Form.Group>
 
                   <Button variant="primary" type="submit">
                     Išsaugoti ir spausdinti

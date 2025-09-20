@@ -16,7 +16,7 @@ const serviceSchema = new mongoose.Schema(
     profit: Number,
     paidDate: Date,
     paymentMethod: String,
-    paymentId: Number,
+    paymentId: mongoose.Schema.Types.Mixed,
     clientType: String,
     companyName: String,
     companyCode: Number,

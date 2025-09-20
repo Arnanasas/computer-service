@@ -174,30 +174,46 @@ router.put("/services/:id", verify, async (req, res) => {
 
     const service = await Service.findOne({ id: serviceId });
 
+    // If needPVM is explicitly false, do NOT generate a paymentId.
+    // If needPVM is undefined or true, keep the current behavior.
+    const needPVMFlag = req.body.needPVM;
+    const shouldGeneratePaymentId = !(needPVMFlag === false);
+
     let paymentId = service ? service.paymentId : null;
 
-    // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
-    if (
-      service &&
-      req.body.paymentMethod &&
-      service.paymentMethod !== req.body.paymentMethod &&
-      (service.paymentMethod === "kortele" ||
-        service.paymentMethod === "grynais") &&
-      (req.body.paymentMethod === "kortele" ||
-        req.body.paymentMethod === "grynais")
-    ) {
-      paymentId = await getNewPaymentId(req.body.paymentMethod);
-    } else if (!service || !service.paymentId) {
-      paymentId = req.body.paymentMethod
-        ? await getNewPaymentId(req.body.paymentMethod)
-        : null;
+    if (shouldGeneratePaymentId) {
+      const isCurrentPaymentIdNumeric =
+        service && typeof service.paymentId === "number" && !isNaN(service.paymentId);
+
+      // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
+      if (
+        service &&
+        req.body.paymentMethod &&
+        service.paymentMethod !== req.body.paymentMethod &&
+        (service.paymentMethod === "kortele" ||
+          service.paymentMethod === "grynais") &&
+        (req.body.paymentMethod === "kortele" ||
+          req.body.paymentMethod === "grynais")
+      ) {
+        paymentId = await getNewPaymentId(req.body.paymentMethod);
+      } else if (!service || !isCurrentPaymentIdNumeric) {
+        paymentId = req.body.paymentMethod
+          ? await getNewPaymentId(req.body.paymentMethod)
+          : null;
+      }
+    } else {
+      // needPVM === false -> mark as No Invoice needed
+      paymentId = "NI";
     }
 
     // Find the service by ID and update it
+    // Exclude needPVM from being persisted (schema doesn't have this field)
+    const { needPVM, ...updateData } = req.body;
+
     const updatedService = await Service.findOneAndUpdate(
       { id: serviceId },
-      { ...req.body, paymentId }, // Use the incoming data to update the service
-      { new: true } // Return the updated document
+      { ...updateData, paymentId },
+      { new: true }
     );
     if (!updatedService) {
       return res.status(404).json({ error: "Service not found" });
@@ -350,10 +366,13 @@ router.get("/sales-data", verify, async (req, res) => {
 module.exports = router;
 
 const getNewPaymentId = async (paymentMethod) => {
-  const highestPaymentService = await Service.findOne({ paymentMethod })
+  // Only consider services that have numeric paymentId values
+  const highestPaymentService = await Service.findOne({
+    paymentMethod,
+    paymentId: { $type: "number" },
+  })
     .sort("-paymentId")
     .limit(1);
-  console.log("highest", highestPaymentService);
   if (!highestPaymentService) return 1;
   return (highestPaymentService.paymentId || 0) + 1;
 };
@@ -538,13 +557,12 @@ router.post("/products", async (req, res) => {
       return res.status(400).json({ error: "Invalid storage location name" });
     }
 
-    // Create a new product
     const newProduct = new Product({
       name,
       description,
       model,
       category: categoryName._id,
-      stock: stock || 0, // Default to 0 if stock is not provided
+      stock: stock || 0,
       price,
       ourPrice,
       storage: storageName._id,

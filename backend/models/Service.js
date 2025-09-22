@@ -25,11 +25,19 @@ const serviceSchema = new mongoose.Schema(
     address: String,
     isSigned: Boolean,
     signature: String,
+    works: [
+      {
+        workId: { type: mongoose.Schema.Types.ObjectId, ref: "Work" },
+        name: String,
+        price: Number,
+      },
+    ],
     usedParts: [
       {
         _id: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // Reference to the Product schema
         name: String, // Part name
         quantity: Number, // Number of parts used
+        unitPrice: Number, // Snapshot of unit price at time of adding
       },
     ],
     isDeleted: {

@@ -153,7 +153,7 @@ export default function AddService() {
                 console.log(values);
                 try {
                   const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/dashboard/services`,
+                    `${process.env.REACT_APP_URL}/api/dashboard/services`,
                     values,
                     {
                       withCredentials: true,
@@ -173,7 +173,7 @@ export default function AddService() {
                 deviceSerial: "",
                 devicePassword: "",
                 failure: "",
-                price: "",
+                price: 19,
                 hasCharger: false,
                 status: "Taisoma vietoje",
                 isContacted: false,
@@ -315,7 +315,8 @@ export default function AddService() {
                           isInvalid={!!errors.price}
                           isValid={touched.price && !errors.price}
                           tabIndex="6"
-                          placeholder="0.00"
+                          placeholder="19.00"
+                          disabled
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.price}
@@ -454,6 +455,12 @@ export default function AddService() {
                       </div>
                     </Col>
                   </Row>
+
+                  {/* <div className="d-flex gap-2 mb-3">
+                    <Button variant="secondary" type="button" onClick={() => navigate(`/edit/${values.id}`)}>
+                      Pridėti paslaugą / dalis (po sukūrimo)
+                    </Button>
+                  </div> */}
                   
 
                   <Form.Control

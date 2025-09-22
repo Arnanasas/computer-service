@@ -4,20 +4,7 @@ import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import Chat from "../apps/Chat";
-import {
-  Card,
-  Nav,
-  OverlayTrigger,
-  Table,
-  Tooltip,
-  Pagination,
-  Modal,
-  Button,
-  Form,
-  Row,
-  Col,
-  Accordion,
-} from "react-bootstrap";
+import { Card, Table, Pagination, Modal, Button, Form, Row, Col, Accordion } from "react-bootstrap";
 import { PDFViewer } from "@react-pdf/renderer";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
@@ -36,7 +23,7 @@ export default function Services() {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [paymentAct, setPaymentAct] = useState(null);
 
-  const { logout, nickname } = useAuth();
+  const { nickname } = useAuth();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -62,7 +49,7 @@ export default function Services() {
     return () => {
       socket.off("receive-notification");
     };
-  }, []);
+  }, [nickname]);
 
   const handleSignatureClick = (serviceID) => {
     if (nickname === "tablet") {
@@ -101,7 +88,7 @@ export default function Services() {
     if (isConfirmed) {
       axios
         .delete(
-          `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+          `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
           {
             withCredentials: true,
           }
@@ -139,7 +126,7 @@ export default function Services() {
     }
 
     axios
-      .get(`${process.env.REACT_APP_URL}/dashboard/services/${filter}`, {
+      .get(`${process.env.REACT_APP_URL}/api/dashboard/services/${filter}`, {
         params: searchParams,
         withCredentials: true,
       })
@@ -287,14 +274,10 @@ export default function Services() {
                     <td>
                       {filter === "archive" ? (
                         <div>
-                          <p
-                            onClick={() => printPaymentAct(i)}
-                            className="cursor-pointer"
-                          >
-                            <a href="#" className="pe-none">
-                              {item.paymentMethod === "kortele" ? "CRD" : "GRN"}
-                              -{item.paymentId}
-                            </a>
+                          <p onClick={() => printPaymentAct(i)} className="cursor-pointer">
+                            <span className="pe-none">
+                              {item.paymentMethod === "kortele" ? "CRD" : "GRN"}-{item.paymentId ? item.paymentId : "NI"}
+                            </span>
                           </p>
                         </div>
                       ) : (

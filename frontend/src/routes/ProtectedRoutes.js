@@ -9,6 +9,7 @@ import Statistics from "../apps/Statistics";
 import QuickAdd from "../dashboard/QuickAdd";
 import Dashboard from "../apps/Dashboard";
 import AddPreInvoice from "../dashboard/AddPreInvoice";
+import Works from "../dashboard/Works";
 import Inventory from "../dashboard/Inventory";
 import AddInventory from "../dashboard/AddInventory";
 import CaptureSignature from "../dashboard/CaptureSignature";
@@ -24,6 +25,7 @@ const protectedRoutes = [
   { path: "/inventory", element: <Inventory /> },
   { path: "/inventory/add", element: <AddInventory /> },
   { path: "/capture-signature", element: <CaptureSignature /> },
+  { path: "/works", element: <Works /> },
 ];
 
 export default protectedRoutes;

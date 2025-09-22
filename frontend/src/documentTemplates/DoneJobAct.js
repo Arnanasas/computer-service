@@ -1,4 +1,3 @@
-import { formatCurrencyInWords } from "../assets/helpers";
 import {
   Document,
   Page,
@@ -142,24 +141,26 @@ const styles = StyleSheet.create({
 });
 
 const DoneJobActDocument = ({
-  price,
   serviceId,
-  paymentMethod,
-  paymentId,
-  clientType,
   paidDate,
-  companyName,
-  companyCode,
-  pvmCode,
-  address,
-  service,
-  clientName,
+  works = [],
+  usedParts = [],
+  failure = "",
 }) => {
-  const priceNumber = Number(price) || 0;
-  const netAmount = priceNumber / 1.21;
-  const vatAmount = priceNumber - netAmount;
   const paidDateText = (paidDate || "").toString().substring(0, 10);
-  const paymentMethodText = paymentMethod === "kortele" ? "kortele" : "grynais";
+
+  const rows = [
+    ...((Array.isArray(works) ? works : []).map((w) => ({
+      type: "Darbas",
+      name: w.name || "",
+      description: w.description || "",
+    })) || []),
+    ...((Array.isArray(usedParts) ? usedParts : []).map((p) => ({
+      type: "Prekė",
+      name: p.category || "",
+      description: p.name || "",
+    })) || []),
+  ];
 
   return (
   <Document>
@@ -205,97 +206,50 @@ const DoneJobActDocument = ({
 
       </View>
 
-      {/* <View style={styles.marginBottom1}>
-        <Text style={styles.fontBold}>PVM SĄSKAITA - FAKTŪRA</Text>
-        <Text>
-          Serija {paymentMethod === "kortele" ? "CRD" : "GRN"}-{paymentId}
-        </Text>
-        <Text>{paidDate.substring(0, 10)}</Text>
-      </View> */}
+      {/* Client complaint (unstyled) */}
+      <View style={styles.section}>
+        <Text style={styles.fontBold}>Kliento nusiskundimas</Text>
+        <Text style={{ marginTop: 4 }}>{failure}</Text>
+      </View>
 
-      <Text style={styles.fontBold}>Atsiskaityti už:</Text>
+      <Text style={styles.fontBold}>Atlikti darbai:</Text>
 
       <View style={styles.section}>
-        <View style={{ marginBottom: 10 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              borderBottomWidth: 0.5,
-              borderColor: "#000",
-              paddingVertical: 5,
-            }}
-          >
-            <Text style={{ flex: 2, fontWeight: "bold", textAlign: "left" }}>
-              Pavadinimas
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
-              Kiekis
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
-              Kaina
-            </Text>
-            <Text style={{ flex: 1, fontWeight: "bold", textAlign: "center" }}>
-              Suma
-            </Text>
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <View style={styles.tableCol}>
+              <Text style={[styles.cell, styles.fontBold]}>Prekė</Text>
+            </View>
+            <View style={[styles.tableCol, styles.tableColName]}>
+              <Text style={[styles.cell, styles.fontBold]}>Pavadinimas</Text>
+            </View>
+            <View style={[styles.tableCol, styles.tableColName]}>
+              <Text style={[styles.cell, styles.fontBold]}>Aprašymas</Text>
+            </View>
           </View>
-          <View
-            style={{
-              flexDirection: "row",
-              paddingVertical: 5,
-              borderBottomWidth: 0.5,
-            }}
-          >
-            <Text style={{ flex: 2, textAlign: "left" }}>{service}</Text>
-            <Text style={{ flex: 1, textAlign: "center" }}>1</Text>
-            <Text style={{ flex: 1, textAlign: "center" }}>
-              {netAmount.toFixed(2)} €
-            </Text>
-            <Text style={{ flex: 1, textAlign: "center" }}>
-              {netAmount.toFixed(2)} €
-            </Text>
-          </View>
+          {(rows.length > 0 ? rows : [{ type: "-", name: "-", description: "" }]).map((item, idx) => (
+            <View style={styles.tableRow} key={`row-${idx}`}>
+              <View style={styles.tableCol}>
+                <Text style={styles.cell}>{item.type}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.tableColName]}>
+                <Text style={styles.cell}>{item.name}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.tableColName]}>
+                <Text style={styles.cell}>{item.description || ""}</Text>
+              </View>
+            </View>
+          ))}
         </View>
       </View>
 
-      <View
-        style={[
-          styles.flex,
-          { justifyContent: "flex-end", flexDirection: "column" },
-        ]}
-      >
-        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-          <View style={{ flexDirection: "column", alignItems: "flex-end" }}>
-            <Text style={[styles.cell, { textAlign: "right" }]}>Suma:</Text>
-            <Text style={[styles.cell, { textAlign: "right" }]}>PVM 21%:</Text>
-            <Text
-              style={[styles.cell, styles.fontBold, { textAlign: "right" }]}
-            >
-              IŠ VISO:
-            </Text>
-          </View>
-          <View style={{ flexDirection: "column", alignItems: "flex-end" }}>
-            <Text style={[styles.cell, { textAlign: "right" }]}>
-              {netAmount.toFixed(2)} EUR
-            </Text>
-            <Text style={[styles.cell, { textAlign: "right" }]}>
-              {vatAmount.toFixed(2)} EUR
-            </Text>
-            <Text
-              style={[styles.cell, styles.fontBold, { textAlign: "right" }]}
-            >
-              {priceNumber.toFixed(2)} EUR
-            </Text>
-          </View>
-        </View>
-      </View>
+      <View style={{ marginTop: 12 }} />
 
-      <Text style={styles.marginBottom1}>
-        Suma žodžiais: {formatCurrencyInWords(priceNumber)}
-      </Text>
+      {/* Completion status */}
+      <Text style={[styles.textCenter, styles.fontBold]}>Remonto užbaigimo statusas išvada: Įrenginys grąžintas suremontuotas</Text>
+      <Text style={[styles.textCenter, { fontSize: 8, marginTop: 6 }]}>Darbams ir pakeistoms detalėms įrenginiams suteikiame 90 dienų. garantiją nuo įrenginio atsiėmimo. Sudrėkusių bei struktūriškai pažeistų įrenginių taisymui garantija neteikiama.</Text>
 
-      <Text style={styles.marginBottom4}>
-        Sumokėta {paymentMethodText}.
-      </Text>
+      <View style={styles.marginBottom4} />
 
       <View style={[styles.flex, styles.justifyBetween]}>
         <View style={styles.signaturePlaceholder}>

@@ -12,35 +12,21 @@ export default function EditInventory() {
   const productId = window.location.pathname.split("/").pop();
   const { Formik } = formik;
 
-  // Update the validation schema for inventory fields
   const validationSchema = yup.object().shape({
     name: yup.string().required("Product name is required"),
-    description: yup.string(),
-    model: yup.string().required("Model is required"),
-    category: yup.string().required("Category is required"),
-    stock: yup
-      .number()
-      .required("Stock is required")
-      .min(0, "Stock can't be negative"),
-    price: yup
-      .number()
-      .required("Price is required")
-      .min(0, "Price can't be negative"),
-    ourPrice: yup.number().min(0, "Price can't be negative"),
-    partNumber: yup.string().required("Part number is required"),
-    storage: yup.string(),
+    category: yup
+      .string()
+      .oneOf(["Other", "Phone", "PC"], "Invalid category")
+      .required("Category is required"),
+    price: yup.number().required("Price is required").min(0, "Price can't be negative"),
+    quantity: yup.number().min(0, "Quantity can't be negative").required("Quantity is required"),
   });
 
   const [data, setData] = useState({
     name: "",
-    description: "",
-    model: "",
-    category: "",
-    stock: 0,
-    price: "0",
-    ourPrice: "0",
-    partNumber: "",
-    storage: "Kalvariju",
+    category: "Other",
+    price: 0,
+    quantity: 0,
   });
 
   // Predefined categories and locations
@@ -84,15 +70,11 @@ export default function EditInventory() {
   useEffect(() => {
     // Fetch service data when component mounts
     axios
-      .get(`${process.env.REACT_APP_URL}/dashboard/products/${productId}`, {
+      .get(`${process.env.REACT_APP_URL}/api/dashboard/products/${productId}`, {
         withCredentials: true,
       })
       .then((response) => {
-        setData({
-          ...response.data,
-          category: response.data.category.name,
-          storage: response.data.storage.locationName,
-        });
+        setData(response.data);
       })
       .catch((error) => {
         console.error("Error fetching service data:", error);
@@ -121,7 +103,7 @@ export default function EditInventory() {
               onSubmit={async (values) => {
                 try {
                   const response = await axios.put(
-                    `${process.env.REACT_APP_URL}/dashboard/products/${productId}`, // Update endpoint for inventory
+                    `${process.env.REACT_APP_URL}/api/dashboard/products/${productId}`,
                     values,
                     {
                       withCredentials: true,
@@ -135,14 +117,9 @@ export default function EditInventory() {
               }}
               initialValues={{
                 name: data.name || "",
-                description: data.description || "",
-                model: data.model || "",
-                category: data.category || "",
-                stock: data.stock || 0,
-                price: data.price || "0",
-                ourPrice: data.ourPrice || "0",
-                partNumber: data.partNumber || "",
-                storage: data.storage || "",
+                category: data.category || "Other",
+                price: data.price ?? 0,
+                quantity: data.quantity ?? 0,
               }}
               enableReinitialize={true}
             >
@@ -167,56 +144,23 @@ export default function EditInventory() {
                       </div>
                     </Col>
 
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="description">Aprašymas</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="description"
-                          name="description"
-                          value={values.description}
-                          onChange={handleChange}
-                          isInvalid={!!errors.description}
-                          isValid={touched.description && !errors.description}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.description}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
+                    
                   </Row>
                   <Row>
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="model">Modelis</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="model"
-                          name="model"
-                          value={values.model}
-                          onChange={handleChange}
-                          isInvalid={!!errors.model}
-                          isValid={touched.model && !errors.model}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.model}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="stock">Kiekis</Form.Label>
+                        <Form.Label htmlFor="quantity">Kiekis</Form.Label>
                         <Form.Control
                           type="number"
-                          id="stock"
-                          name="stock"
-                          value={values.stock}
+                          id="quantity"
+                          name="quantity"
+                          value={values.quantity}
                           onChange={handleChange}
-                          isInvalid={!!errors.stock}
-                          isValid={touched.stock && !errors.stock}
+                          isInvalid={!!errors.quantity}
+                          isValid={touched.quantity && !errors.quantity}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {errors.stock}
+                          {errors.quantity}
                         </Form.Control.Feedback>
                       </div>
                     </Col>
@@ -234,38 +178,16 @@ export default function EditInventory() {
                           isInvalid={!!errors.category}
                           isValid={touched.category && !errors.category}
                         >
-                          <option value="">Select Category</option>
-                          {categories.map((cat) => (
-                            <option key={cat.value} value={cat.value}>
-                              {cat.label}
-                            </option>
-                          ))}
+                          <option value="Other">Other</option>
+                          <option value="Phone">Phone</option>
+                          <option value="PC">PC</option>
                         </Form.Control>
                         <Form.Control.Feedback type="invalid">
                           {errors.category}
                         </Form.Control.Feedback>
                       </div>
                     </Col>
-
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="partNumber">
-                          Dalies numeris
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="partNumber"
-                          name="partNumber"
-                          value={values.partNumber}
-                          onChange={handleChange}
-                          isInvalid={!!errors.partNumber}
-                          isValid={touched.partNumber && !errors.partNumber}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.partNumber}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
+                    
                   </Row>
                   <Row>
                     <Col md={6}>
@@ -285,53 +207,9 @@ export default function EditInventory() {
                         </Form.Control.Feedback>
                       </div>
                     </Col>
-
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="ourPrice">
-                          Pirkimo kaina
-                        </Form.Label>
-                        <Form.Control
-                          type="number"
-                          id="ourPrice"
-                          name="ourPrice"
-                          value={values.ourPrice}
-                          onChange={handleChange}
-                          isInvalid={!!errors.ourPrice}
-                          isValid={touched.ourPrice && !errors.ourPrice}
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.ourPrice}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
+                    
                   </Row>
-
-                  <Row>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="storage">Lokacija</Form.Label>
-                        <Form.Control
-                          as="select"
-                          id="storage"
-                          name="storage"
-                          value={values.storage}
-                          onChange={handleChange}
-                          isInvalid={!!errors.storage}
-                          isValid={touched.storage && !errors.storage}
-                        >
-                          {locations.map((loc) => (
-                            <option key={loc.value} value={loc.value}>
-                              {loc.label}
-                            </option>
-                          ))}
-                        </Form.Control>
-                        <Form.Control.Feedback type="invalid">
-                          {errors.storage}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-                  </Row>
+                  
 
                   <Button
                     variant="primary"

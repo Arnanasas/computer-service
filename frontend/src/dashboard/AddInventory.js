@@ -6,7 +6,7 @@ import axios from "axios";
 import { Button, Card, Col, Row, Form } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
-import PreInvoiceAct from "../documentTemplates/PreInvoiceAct";
+ 
 
 export default function AddInventory() {
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ export default function AddInventory() {
               onSubmit={async (values) => {
                 try {
                   const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/dashboard/products`, // Update endpoint for inventory
+                    `${process.env.REACT_APP_URL}/api/dashboard/products`, // Update endpoint for inventory
                     values,
                     {
                       withCredentials: true,

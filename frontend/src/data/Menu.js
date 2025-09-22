@@ -33,6 +33,11 @@ const applicationsMenu = [
     icon: "ri-menu-add-line",
   },
   {
+    label: "Paslaugos",
+    link: "/works",
+    icon: "ri-list-unordered",
+  },
+  {
     label: "Greitas Pardavimas",
     link: "/quick-add",
     icon: "ri-add-circle-line",
@@ -50,12 +55,12 @@ const applicationsMenu = [
   {
     label: "Neapmokėta",
     link: "/services/archive-notpaid",
-    icon: "ri-archive-drawer-line",
+    icon: "ri-inbox-unarchive-line",
   },
   {
     label: "JB",
     link: "/services/jb",
-    icon: "ri-money-dollar-circle-line",
+    icon: "ri-chat-smile",
   },
   {
     label: "Statistika",

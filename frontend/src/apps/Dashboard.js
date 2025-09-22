@@ -29,7 +29,7 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/dashboard/dashboard-stats`,
+          `${process.env.REACT_APP_URL}/api/dashboard/dashboard-stats`,
           {
             withCredentials: true,
           }
@@ -45,7 +45,7 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/dashboard/sales-data`,
+          `${process.env.REACT_APP_URL}/api/dashboard/sales-data`,
           {
             withCredentials: true,
           }
@@ -86,7 +86,7 @@ export default function Dashboard() {
     const fetchOutOfStockProducts = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/dashboard/products-out-of-stock`,
+          `${process.env.REACT_APP_URL}/api/dashboard/products-out-of-stock`,
           {
             withCredentials: true,
           }

@@ -24,7 +24,7 @@ export default function Chat({ itemId }) {
         };
 
         const response = await axios.post(
-          `${process.env.REACT_APP_URL}/dashboard/comment`,
+          `${process.env.REACT_APP_URL}/api/dashboard/comment`,
           values,
           {
             withCredentials: true,
@@ -87,7 +87,7 @@ export default function Chat({ itemId }) {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/dashboard/comments/${itemId}`,
+          `${process.env.REACT_APP_URL}/api/dashboard/comments/${itemId}`,
           {
             withCredentials: true,
           }
@@ -115,7 +115,7 @@ export default function Chat({ itemId }) {
   async function togglePublicStatus(commentId) {
     try {
       const response = await axios.put(
-        `${process.env.REACT_APP_URL}/dashboard/comment/${commentId}/toggle-public`,
+        `${process.env.REACT_APP_URL}/api/dashboard/comment/${commentId}/toggle-public`,
         "",
         {
           withCredentials: true,

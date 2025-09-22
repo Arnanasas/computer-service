@@ -1,21 +1,9 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
-import { Link } from "react-router-dom";
+ 
 import axios from "axios";
-import {
-  Button,
-  Card,
-  Col,
-  Form,
-  InputGroup,
-  FormControl,
-  Table,
-  OverlayTrigger,
-  Row,
-  Tooltip,
-  Modal,
-} from "react-bootstrap";
+import { Button, Card, Col, Form, InputGroup, FormControl, Table, Row, Modal } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +12,7 @@ import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import BlackActDocument from "../documentTemplates/BlackAct";
 import DoneJobActDocument from "../documentTemplates/DoneJobAct";
-import { useAuth } from "../AuthContext";
+ 
 import { Toaster, toast } from "react-hot-toast";
 
 export default function EditService() {
@@ -52,6 +40,18 @@ export default function EditService() {
 
   const { Formik } = formik;
 
+  // Works management state
+  const [serviceWorks, setServiceWorks] = useState([]);
+  const [showWorkModal, setShowWorkModal] = useState(false);
+  const [workQuery, setWorkQuery] = useState("");
+  const [workResults, setWorkResults] = useState([]);
+  const [workPage, setWorkPage] = useState(1);
+  const [workLimit] = useState(10);
+  const [workTotalPages, setWorkTotalPages] = useState(1);
+  const [selectedWorks, setSelectedWorks] = useState([]); // {workId, name, defaultPrice, price}
+  const [newWork, setNewWork] = useState({ name: "", description: "", defaultPrice: "" });
+  const isArchived = ["Atsiskaityta", "jb"].includes((data && data.status) || "");
+
   const validationSchema = yup.object().shape({
     id: yup.string().required(),
     name: yup.string().required("Name is required"),
@@ -63,7 +63,7 @@ export default function EditService() {
     deviceSerial: yup.string(),
     devicePassword: yup.string(),
     failure: yup.string().required("Failure is required"),
-    price: yup.number().required("Price is required"),
+    price: yup.string().required("Price is required"),
     profit: yup.number().required("Profit is required"),
     hasCharger: yup.boolean().required("Has Charger is required"),
     status: yup.string().required("Status is required"),
@@ -102,12 +102,15 @@ export default function EditService() {
   useEffect(() => {
     // Fetch service data when component mounts
     axios
-      .get(`${process.env.REACT_APP_URL}/dashboard/service/${serviceId}`, {
+      .get(`${process.env.REACT_APP_URL}/api/dashboard/service/${serviceId}`, {
         withCredentials: true,
       })
       .then((response) => {
         const serviceData = response.data;
         setData(serviceData);
+
+        // Initialize works state
+        setServiceWorks(Array.isArray(serviceData.works) ? serviceData.works : []);
 
         if (serviceData.usedParts && serviceData.usedParts.length > 0) {
           setSelectedParts(
@@ -115,6 +118,7 @@ export default function EditService() {
               _id: part._id,
               name: part.name,
               quantity: part.quantity,
+              unitPrice: part.unitPrice,
             }))
           );
         }
@@ -138,13 +142,30 @@ export default function EditService() {
     setIsDoneJobActShown(true);
     console.log("Done job act shown");
 
+    // Wait for the PDF iframe to load before printing to avoid blank pages
     setTimeout(() => {
       const iframe = document.querySelector("iframe.done-job-act");
-      if (iframe && iframe.contentWindow) {
-        try { iframe.contentWindow.focus(); } catch (e) {}
-        iframe.contentWindow.print();
-      }
-    }, 600);
+      if (!iframe) return;
+
+      const printNow = () => {
+        if (iframe && iframe.contentWindow) {
+          try { iframe.contentWindow.focus(); } catch (e) {}
+          try { iframe.contentWindow.print(); } catch (e) {}
+        }
+      };
+
+      const onLoad = () => {
+        iframe.removeEventListener("load", onLoad);
+        printNow();
+      };
+
+      try {
+        iframe.addEventListener("load", onLoad);
+      } catch (e) {}
+
+      // Fallback: if already loaded or event didn't fire, try after a longer delay
+      setTimeout(printNow, 1500);
+    }, 100);
   };
 
   const getPaymentAct = () => {
@@ -159,7 +180,7 @@ export default function EditService() {
       serviceId: data.id,
     };
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_URL}/send-msg/accept`,
         values,
         {
@@ -185,7 +206,7 @@ export default function EditService() {
       serviceId: data.id,
     };
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_URL}/send-msg/pick-up`,
         values,
         {
@@ -228,33 +249,34 @@ export default function EditService() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [selectedParts, setSelectedParts] = useState([]);
   const [products, setProducts] = useState([]);
-  const [query, setQuery] = useState({
+  const [query, setQuery] = useState({ name: "", category: "" });
+  const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "",
-    storage: "",
-    minStock: "",
-    maxStock: "",
+    category: "Other",
+    price: "",
+    quantity: 0,
   });
 
   useEffect(() => {
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_URL}/dashboard/products`, // Update endpoint for inventory
+        `${process.env.REACT_APP_URL}/api/dashboard/products`,
         {
           params: {
-            ...query,
+            name: query.name || undefined,
+            category: query.category || undefined,
+            page: 1,
             limit: 30,
           },
-        },
-        {
           withCredentials: true,
         }
       );
-      setProducts(response.data.products);
+      setProducts(response.data.products || []);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
@@ -263,7 +285,7 @@ export default function EditService() {
   const updatePartStock = async (partId, quantityChange) => {
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/dashboard/products/quantity-change`,
+        `${process.env.REACT_APP_URL}/api/dashboard/products/quantity-change`,
         {
           partId,
           quantityChange, // Send part ID and quantity change to the backend
@@ -275,16 +297,140 @@ export default function EditService() {
     }
   };
 
+  // Works: search catalog
+  useEffect(() => {
+    if (!showWorkModal) return;
+    const fetchWorks = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_URL}/api/dashboard/works`,
+          {
+            params: { q: workQuery, page: workPage, limit: workLimit },
+            withCredentials: true,
+          }
+        );
+        setWorkResults(response.data.works || []);
+        setWorkTotalPages(response.data.pagination?.totalPages || 1);
+      } catch (error) {
+        console.error("Error searching works:", error);
+      }
+    };
+    fetchWorks();
+  }, [showWorkModal, workQuery, workPage, workLimit]);
+
+  const addWorkToSelection = (work) => {
+    setSelectedWorks((prev) => {
+      if (prev.find((w) => w.workId === work._id)) return prev;
+      return [
+        ...prev,
+        {
+          workId: work._id,
+          name: work.name,
+          defaultPrice: work.defaultPrice,
+          price: "",
+        },
+      ];
+    });
+  };
+
+  const removeWorkFromSelection = (workId) => {
+    setSelectedWorks((prev) => prev.filter((w) => w.workId !== workId));
+  };
+
+  const submitSelectedWorks = async () => {
+    if (selectedWorks.length === 0) return;
+    try {
+      const payload = {
+        works: selectedWorks.map((w) => ({
+          workId: w.workId,
+          ...(w.price !== "" ? { price: Number(w.price) } : {}),
+        })),
+      };
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works`,
+        payload,
+        { withCredentials: true }
+      );
+      const updated = response.data;
+      setServiceWorks(updated.works || []);
+      setData((prev) => ({ ...prev, price: updated.price }));
+      setSelectedWorks([]);
+      setShowWorkModal(false);
+    } catch (error) {
+      console.error("Error adding works:", error);
+    }
+  };
+
+  const removeWorkFromService = async (workId) => {
+    try {
+      const response = await axios.delete(
+        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works/${workId}`,
+        { withCredentials: true }
+      );
+      const updated = response.data;
+      setServiceWorks(updated.works || []);
+      setData((prev) => ({ ...prev, price: updated.price }));
+    } catch (error) {
+      console.error("Error removing work:", error);
+    }
+  };
+
+  const recalculatePrice = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/recalculate-price`,
+        {},
+        { withCredentials: true }
+      );
+      const updated = response.data;
+      setServiceWorks(updated.works || serviceWorks);
+      setData((prev) => ({ ...prev, price: updated.price }));
+    } catch (error) {
+      console.error("Error recalculating price:", error);
+    }
+  };
+
+  const createWork = async () => {
+    if (!newWork.name || newWork.defaultPrice === "") return;
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/api/dashboard/works`,
+        {
+          name: newWork.name,
+          description: newWork.description,
+          defaultPrice: Number(newWork.defaultPrice),
+        },
+        { withCredentials: true }
+      );
+      const created = response.data?.work || response.data;
+      setNewWork({ name: "", description: "", defaultPrice: "" });
+      // Prefill selection with created work for quick add
+      if (created && created._id) {
+        addWorkToSelection(created);
+      }
+      // Refresh results list
+      setWorkQuery("");
+      setWorkPage(1);
+    } catch (error) {
+      console.error("Error creating work:", error);
+      alert("Nepavyko sukurti paslaugos");
+    }
+  };
+
   // When adding a part (reduce stock by 1)
   const addPart = (part) => {
     const isAlreadyAdded = selectedParts.some(
       (selectedPart) => selectedPart._id === part._id
     );
     if (!isAlreadyAdded) {
-      setSelectedParts((prevParts) => [...prevParts, { ...part, quantity: 1 }]);
+      const nextParts = [...selectedParts, { ...part, quantity: 1 }];
+      setSelectedParts(nextParts);
 
       // Reduce stock in the backend by 1
       updatePartStock(part._id, -1);
+      if (!isArchived) {
+        syncUsedPartsToService(nextParts);
+      }
     } else {
       alert("This part has already been added.");
     }
@@ -294,7 +440,8 @@ export default function EditService() {
   const removePart = (id) => {
     const removedPart = selectedParts.find((part) => part._id === id);
     console.log("Removing part: ", removedPart);
-    setSelectedParts(selectedParts.filter((part) => part._id !== id));
+    const nextParts = selectedParts.filter((part) => part._id !== id);
+    setSelectedParts(nextParts);
 
     // Increase stock in backend by the part's used quantity
     if (removedPart) {
@@ -306,16 +453,18 @@ export default function EditService() {
       );
       updatePartStock(removedPart._id, removedPart.quantity); // Restore stock
     }
+    if (!isArchived) {
+      syncUsedPartsToService(nextParts);
+    }
   };
 
   const handleQuantityChange = (id, newQuantity) => {
     const updatedQuantity = Number(newQuantity);
 
-    setSelectedParts((prevParts) =>
-      prevParts.map((part) =>
-        part._id === id ? { ...part, quantity: updatedQuantity } : part
-      )
+    const nextParts = selectedParts.map((part) =>
+      part._id === id ? { ...part, quantity: updatedQuantity } : part
     );
+    setSelectedParts(nextParts);
 
     // Find the part in the list
     const partToUpdate = selectedParts.find((part) => part._id === id);
@@ -336,6 +485,63 @@ export default function EditService() {
 
       // Update stock in the backend by the difference
       updatePartStock(id, -quantityDifference); // Negative when reducing stock
+    }
+    if (!isArchived) {
+      syncUsedPartsToService(nextParts);
+    }
+  };
+
+  const syncUsedPartsToService = async (parts) => {
+    try {
+      const usedParts = parts.map((p) => ({ _id: p._id, name: p.name, quantity: p.quantity }));
+      const response = await axios.put(
+        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+        { usedParts },
+        { withCredentials: true }
+      );
+      const updated = response.data;
+      setData((prev) => ({ ...prev, price: updated.price, status: updated.status }));
+      if (Array.isArray(updated.usedParts)) {
+        setSelectedParts(
+          updated.usedParts.map((part) => ({
+            _id: part._id,
+            name: part.name,
+            quantity: part.quantity,
+            unitPrice: part.unitPrice,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error syncing used parts:", error);
+    }
+  };
+
+  const createProduct = async () => {
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_URL}/api/dashboard/products`,
+        {
+          name: newProduct.name,
+          category: newProduct.category,
+          price: Number(newProduct.price),
+          quantity: Number(newProduct.quantity || 0),
+        },
+        { withCredentials: true }
+      );
+      const created = response.data?.product || response.data;
+      setNewProduct({
+        name: "",
+        category: "Other",
+        price: "",
+        quantity: 0,
+      });
+      await fetchProducts();
+      if (created && created._id) {
+        addPart(created);
+      }
+    } catch (error) {
+      console.error("Error creating product:", error);
+      alert("Nepavyko sukurti dalies");
     }
   };
 
@@ -398,7 +604,7 @@ export default function EditService() {
 
                 try {
                   const response = await axios.put(
-                    `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+                    `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
                     { ...values, usedParts: partsUsed },
                     {
                       withCredentials: true,
@@ -590,7 +796,7 @@ export default function EditService() {
                               type="text"
                               id="price"
                               name="price"
-                              value={values.price}
+                              value={data.price}
                               onChange={handleChange}
                               isInvalid={!!errors.price}
                               isValid={touched.price && !errors.price}
@@ -616,15 +822,15 @@ export default function EditService() {
                           </div>
                         </Form.Group>
                       </Col>
-                    </Row>
-                    <Form.Group controlId="hasCharger">
+                      <Col md={6}>
+                      <Form.Group controlId="hasCharger">
                       <div className="mb-3">
                         <Form.Check
                           type="switch"
                           label="Pakrovėjas?"
                           id="hasCharger"
                           name="hasCharger"
-                          checked={values.hasCharger} // Use checked instead of value
+                          checked={values.hasCharger}
                           onChange={(e) => handleChange(e, "hasCharger")}
                           isValid={touched.hasCharger && !errors.hasCharger}
                         />
@@ -642,7 +848,85 @@ export default function EditService() {
                           isValid={touched.isContacted && !errors.isContacted}
                         />
                       </div>
-                    </Form.Group>
+                    </Form.Group></Col>
+                    </Row>
+
+                    <Row>
+                      <Form.Label>
+                        <b>Paslaugos (Works)</b>
+                      </Form.Label>
+                      <Table striped bordered hover>
+                        <thead>
+                          <tr>
+                            <th>Pavadinimas</th>
+                            <th>Kaina (€)</th>
+                            <th>Veiksmai</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {serviceWorks.map((w, idx) => (
+                            <tr key={`${w.workId || idx}-${idx}`}>
+                              <td>{w.name}</td>
+                              <td>
+                                <FormControl
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  defaultValue={parseFloat(w.price).toFixed(2)}
+                                  onBlur={(e) => {
+                                    const val = e.target.value;
+                                    if (val !== "" && !isNaN(val)) {
+                                      try {
+                                        axios
+                                          .put(
+                                            `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works/${idx}`,
+                                            { price: Number(val) },
+                                            { withCredentials: true }
+                                          )
+                                          .then((res) => {
+                                            const updated = res.data;
+                                            setServiceWorks(updated.works || []);
+                                            setData((prev) => ({ ...prev, price: updated.price }));
+                                          })
+                                          .catch((err) => console.error("Error updating work price:", err));
+                                      } catch {}
+                                    }
+                                  }}
+                                />
+                              </td>
+                              <td>
+                                <Button
+                                  variant="danger"
+                                  size="sm"
+                                  onClick={() => removeWorkFromService(w.workId)}
+                                >
+                                  Pašalinti
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                          {serviceWorks.length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="text-center text-muted">
+                                Nėra pridėtų paslaugų
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </Table>
+                      <div className="d-flex gap-2 mb-3">
+                        <Button variant="secondary" onClick={() => setShowWorkModal(true)}>
+                          Pridėti paslaugą
+                        </Button>
+                        <Button variant="outline-primary" onClick={recalculatePrice}>
+                          Perskaičiuoti kainą
+                        </Button>
+                        <div className="ms-auto fw-bold">
+                          Iš viso: €{parseFloat(data.price || 0).toFixed(2)}
+                        </div>
+                      </div>
+                    </Row>
+
                     <Row>
                       <Form.Label htmlFor="#">
                         <b>Naudojamos dalys</b>
@@ -652,7 +936,7 @@ export default function EditService() {
                           <tr>
                             <th>ID</th>
                             <th>Dalies pavadinimas</th>
-                            <th>Lokacija</th>
+                            <th>Vnt. kaina (€)</th>
                             <th>Kiekis</th>
                             <th>Veiksmai</th>
                           </tr>
@@ -662,7 +946,7 @@ export default function EditService() {
                             <tr key={part._id}>
                               <td>{part._id}</td>
                               <td>{part.name}</td>
-                              <td>{part.storage?.locationName}</td>
+                              <td>{part.unitPrice !== undefined ? parseFloat(part.unitPrice).toFixed(2) : "-"}</td>
                               <td>
                                 <FormControl
                                   type="number"
@@ -688,6 +972,15 @@ export default function EditService() {
                           ))}
                         </tbody>
                       </Table>
+                      <div className="d-flex py-2">
+                        <Button
+                          variant="warning"
+                          onClick={() => setShowProductModal(true)}
+                          className="mt-2"
+                        >
+                          Pridėti dalis
+                        </Button>
+                      </div>
                     </Row>
                     <Button variant="primary" type="submit" className="mx-2">
                       Patvirtinti
@@ -722,18 +1015,11 @@ export default function EditService() {
                   {isDoneJobActShown && (
                   <PDFViewer className="done-job-act d-none">
                     <DoneJobActDocument
-                      price={Number(values.price)}
                       serviceId={data.id || serviceId}
-                      paymentMethod={data.paymentMethod || "kortele"}
-                      paymentId={data.paymentId}
-                      clientType={data.clientType || "privatus"}
                       paidDate={data.paidDate || ""}
-                      companyName={data.companyName || ""}
-                      companyCode={data.companyCode || ""}
-                      pvmCode={data.pvmCode || ""}
-                      address={data.address || ""}
-                      service={data.service || "Kompiuterio remontas"}
-                      clientName={values.name || data.name}
+                      works={serviceWorks}
+                      usedParts={Array.isArray(data.usedParts) ? data.usedParts : []}
+                      failure={data.failure || ""}
                     />
                   </PDFViewer>
                 )}
@@ -764,13 +1050,6 @@ export default function EditService() {
                 >
                   Siųsti žinutę
                 </Button>
-                <Button
-                  variant="warning"
-                  onClick={() => setShowProductModal(true)}
-                >
-                  Pridėti dalis
-                </Button>
-
                 <Button
                   variant="primary"
                   type="button"
@@ -848,9 +1127,9 @@ export default function EditService() {
         <Modal.Body>
           <Formik
             onSubmit={async (values) => {
-              try {
-                const response = await axios.put(
-                  `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+    try {
+      const response = await axios.put(
+                  `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
                   { ...values, status: "Atsiskaityta" },
                   {
                     withCredentials: true,
@@ -1098,6 +1377,56 @@ export default function EditService() {
           <Modal.Title>Select Parts</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <h6 className="mb-2">Sukurti naują dalį</h6>
+          <Form className="border rounded p-2 mb-3">
+            <Row className="g-2">
+              <Col md={4}>
+                <Form.Control
+                  placeholder="Pavadinimas*"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                />
+              </Col>
+              <Col md={3}>
+                <Form.Select
+                  value={newProduct.category}
+                  onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                >
+                  <option value="Other">Other</option>
+                  <option value="Phone">Phone</option>
+                  <option value="PC">PC</option>
+                </Form.Select>
+              </Col>
+              <Col md={2}>
+                <Form.Control
+                  type="number"
+                  placeholder="Kiekis*"
+                  min={0}
+                  value={newProduct.quantity}
+                  onChange={(e) => setNewProduct({ ...newProduct, quantity: Number(e.target.value) })}
+                />
+              </Col>
+              <Col md={3}>
+                <Form.Control
+                  type="number"
+                  placeholder="Kaina*"
+                  min={0}
+                  step="0.01"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                />
+              </Col>
+              <Col md={12}>
+                <small className="text-muted">Laukai: pavadinimas, kategorija (Other/Phone/PC), kaina, kiekis</small>
+              </Col>
+            </Row>
+            <div className="d-flex justify-content-end mt-2">
+              <Button size="sm" variant="primary" onClick={createProduct} disabled={!newProduct.name || newProduct.price === ""}>
+                Sukurti ir pridėti
+              </Button>
+            </div>
+          </Form>
+
           <Form>
             <InputGroup className="mb-3">
               <FormControl
@@ -1105,44 +1434,24 @@ export default function EditService() {
                 onChange={(e) => setQuery({ ...query, name: e.target.value })}
               />
             </InputGroup>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Category"
-                onChange={(e) =>
-                  setQuery({ ...query, category: e.target.value })
-                }
-              />
-              <FormControl
-                placeholder="Storage"
-                onChange={(e) =>
-                  setQuery({ ...query, storage: e.target.value })
-                }
-              />
-            </InputGroup>
-            <InputGroup className="mb-3">
-              <FormControl
-                placeholder="Min Stock"
-                type="number"
-                onChange={(e) =>
-                  setQuery({ ...query, minStock: e.target.value })
-                }
-              />
-              <FormControl
-                placeholder="Max Stock"
-                type="number"
-                onChange={(e) =>
-                  setQuery({ ...query, maxStock: e.target.value })
-                }
-              />
-            </InputGroup>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Select value={query.category} onChange={(e) => setQuery({ ...query, category: e.target.value })}>
+                  <option value="">Visos kategorijos</option>
+                  <option value="Other">Other</option>
+                  <option value="Phone">Phone</option>
+                  <option value="PC">PC</option>
+                </Form.Select>
+              </Col>
+            </Row>
           </Form>
           <Table striped bordered hover>
             <thead>
               <tr>
                 <th>Part Name</th>
                 <th>Category</th>
-                <th>Storage</th>
-                <th>Stock</th>
+                <th>Price</th>
+                <th>Quantity</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -1150,9 +1459,9 @@ export default function EditService() {
               {products.map((product) => (
                 <tr key={product._id}>
                   <td>{product.name}</td>
-                  <td>{product.category?.name}</td>
-                  <td>{product.storage?.locationName}</td>
-                  <td>{product.stock}</td>
+                  <td>{product.category}</td>
+                  <td>{product.price}</td>
+                  <td>{product.quantity}</td>
                   <td>
                     <Button variant="success" onClick={() => addPart(product)}>
                       Add
@@ -1205,9 +1514,9 @@ export default function EditService() {
                 date: today,
                 name: data.name,
               };
-              try {
-                const response = await axios.put(
-                  `${process.env.REACT_APP_URL}/dashboard/services/${serviceId}`,
+    try {
+      await axios.put(
+                  `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
                   { ...data, status: "jb", paidDate: combinedData.date },
                   {
                     withCredentials: true,
@@ -1280,6 +1589,158 @@ export default function EditService() {
           />
         </PDFViewer>
       )}
+
+      {/* Works modal */}
+      <Modal show={showWorkModal} onHide={() => setShowWorkModal(false)} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Pridėti paslaugas</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <h6 className="mb-2">Sukurti naują paslaugą</h6>
+          <Form className="border rounded p-2 mb-3">
+            <Row className="g-2">
+              <Col md={5}>
+                <Form.Control
+                  placeholder="Pavadinimas*"
+                  value={newWork.name}
+                  onChange={(e) => setNewWork({ ...newWork, name: e.target.value })}
+                />
+              </Col>
+              <Col md={4}>
+                <Form.Control
+                  placeholder="Aprašymas"
+                  value={newWork.description}
+                  onChange={(e) => setNewWork({ ...newWork, description: e.target.value })}
+                />
+              </Col>
+              <Col md={2}>
+                <Form.Control
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="Kaina*"
+                  value={newWork.defaultPrice}
+                  onChange={(e) => setNewWork({ ...newWork, defaultPrice: e.target.value })}
+                />
+              </Col>
+              <Col md={1} className="d-grid">
+                <Button size="sm" variant="primary" onClick={createWork} disabled={!newWork.name || newWork.defaultPrice === ""}>
+                  Sukurti
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+
+          <Form className="mb-3">
+            <InputGroup>
+              <FormControl
+                placeholder="Ieškoti pagal pavadinimą"
+                value={workQuery}
+                onChange={(e) => {
+                  setWorkPage(1);
+                  setWorkQuery(e.target.value);
+                }}
+              />
+            </InputGroup>
+          </Form>
+          <Table striped bordered hover size="sm">
+            <thead>
+              <tr>
+                <th>Pavadinimas</th>
+                <th>Numatyta kaina</th>
+                <th>Veiksmai</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workResults.map((w) => (
+                <tr key={w._id}>
+                  <td>{w.name}</td>
+                  <td>€{parseFloat(w.defaultPrice).toFixed(2)}</td>
+                  <td>
+                    <Button variant="success" size="sm" onClick={() => addWorkToSelection(w)}>
+                      Pridėti
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="small text-muted">Puslapis {workPage} iš {workTotalPages}</div>
+            <div className="d-flex gap-2">
+              <Button
+                size="sm"
+                variant="outline-secondary"
+                disabled={workPage <= 1}
+                onClick={() => setWorkPage((p) => Math.max(1, p - 1))}
+              >
+                Atgal
+              </Button>
+              <Button
+                size="sm"
+                variant="outline-secondary"
+                disabled={workPage >= workTotalPages}
+                onClick={() => setWorkPage((p) => p + 1)}
+              >
+                Pirmyn
+              </Button>
+            </div>
+          </div>
+
+          <h6 className="mt-3">Pasirinktos paslaugos</h6>
+          <Table striped bordered hover size="sm">
+            <thead>
+              <tr>
+                <th>Pavadinimas</th>
+                <th>Kaina (pasirinktinai)</th>
+                <th>Veiksmai</th>
+              </tr>
+            </thead>
+            <tbody>
+              {selectedWorks.map((w) => (
+                <tr key={w.workId}>
+                  <td>{w.name}</td>
+                  <td style={{ maxWidth: 140 }}>
+                    <FormControl
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={w.price}
+                      onChange={(e) =>
+                        setSelectedWorks((prev) =>
+                          prev.map((x) =>
+                            x.workId === w.workId ? { ...x, price: e.target.value } : x
+                          )
+                        )
+                      }
+                    />
+                  </td>
+                  <td>
+                    <Button variant="danger" size="sm" onClick={() => removeWorkFromSelection(w.workId)}>
+                      Pašalinti
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {selectedWorks.length === 0 && (
+                <tr>
+                  <td colSpan={3} className="text-center text-muted">
+                    Nepasirinkta
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowWorkModal(false)}>
+            Atšaukti
+          </Button>
+          <Button variant="primary" onClick={submitSelectedWorks} disabled={selectedWorks.length === 0}>
+            Pridėti į servisą
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </React.Fragment>
   );
 }

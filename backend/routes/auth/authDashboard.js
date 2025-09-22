@@ -2,6 +2,7 @@ const User = require("../../models/User");
 const verify = require("./authVerify");
 const Service = require("../../models/Service");
 const Comment = require("../../models/Comment");
+const Work = require("../../models/Work");
 const moment = require("moment"); // Import the moment library for date formatting
 const Product = require("../../models/Product");
 const Category = require("../../models/Category"); // Assuming you're using the Category model
@@ -15,6 +16,65 @@ const upload = multer({ dest: "uploads/" });
 const dayjs = require("dayjs");
 
 const router = require("express").Router();
+
+// Helper to recalculate service price based on works and used parts
+async function recalculateServicePrice(service) {
+  try {
+    const DIAGNOSTICS_NAME = "Diagnostika";
+    const DIAGNOSTICS_DEFAULT_PRICE = 19;
+
+    let worksTotal = 0;
+    if (Array.isArray(service.works)) {
+      // Auto-adjust diagnostics price: 19 only if it's the sole work, else 0
+      const diagIndex = service.works.findIndex(
+        (w) => w && w.name === DIAGNOSTICS_NAME
+      );
+      if (diagIndex !== -1) {
+        if (service.works.length >= 2) {
+          if (Number(service.works[diagIndex].price) !== 0) {
+            service.works[diagIndex].price = 0;
+          }
+        } else {
+          if (Number(service.works[diagIndex].price) !== DIAGNOSTICS_DEFAULT_PRICE) {
+            service.works[diagIndex].price = DIAGNOSTICS_DEFAULT_PRICE;
+          }
+        }
+      }
+
+      worksTotal = service.works.reduce((sum, w) => sum + (Number(w.price) || 0), 0);
+    }
+
+    let partsTotal = 0;
+    if (Array.isArray(service.usedParts) && service.usedParts.length > 0) {
+      const missingPriceIds = service.usedParts
+        .filter((p) => !(typeof p.unitPrice === "number"))
+        .map((p) => p._id)
+        .filter(Boolean);
+
+      let priceById = new Map();
+      if (missingPriceIds.length > 0) {
+        const products = await Product.find({ _id: { $in: missingPriceIds } }).select("_id price");
+        priceById = new Map(products.map((p) => [String(p._id), Number(p.price) || 0]));
+      }
+
+      partsTotal = service.usedParts.reduce((sum, p) => {
+        const unit = typeof p.unitPrice === "number" ? Number(p.unitPrice) : (priceById.get(String(p._id)) || 0);
+        const qty = Number(p.quantity) || 0;
+        return sum + unit * qty;
+      }, 0);
+    }
+
+    const total = worksTotal + partsTotal;
+    service.price = String(total.toFixed(2));
+    return total;
+  } catch (err) {
+    throw err;
+  }
+}
+
+function escapeRegex(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 router.get("/services/:filter", verify, async (req, res) => {
   try {
@@ -116,7 +176,61 @@ router.get("/service/:id", verify, async (req, res) => {
   try {
     const serviceId = req.params.id;
     const service = await Service.findOne({ id: serviceId });
-    res.status(200).json(service);
+    if (!service) {
+      return res.status(404).json({ error: "Service not found" });
+    }
+
+    // Use a plain object to ensure non-schema fields (description) are included in response
+    const result = service.toObject();
+
+    // Enrich works with description from Work collection (by id, then by name fallback)
+    if (Array.isArray(result.works) && result.works.length > 0) {
+      const workIds = result.works.map((w) => w.workId).filter(Boolean);
+      const workDocsById = workIds.length
+        ? await Work.find({ _id: { $in: workIds } }).select("_id description name")
+        : [];
+      const descById = new Map(
+        workDocsById.map((w) => [String(w._id), w.description || ""])
+      );
+
+      const namesNeedingLookup = Array.from(
+        new Set(
+          result.works
+            .filter((w) => !w.workId && w.name)
+            .map((w) => w.name)
+        )
+      );
+      const workDocsByName = namesNeedingLookup.length
+        ? await Work.find({ name: { $in: namesNeedingLookup } }).select("name description")
+        : [];
+      const descByName = new Map(
+        workDocsByName.map((w) => [w.name, w.description || ""])
+      );
+
+      result.works = result.works.map((w) => ({
+        ...w,
+        description:
+          descById.get(String(w.workId)) || (w.name ? descByName.get(w.name) : "") || "",
+      }));
+    }
+
+    // Enrich usedParts with category from Product collection
+    if (Array.isArray(result.usedParts) && result.usedParts.length > 0) {
+      const partIds = result.usedParts.map((p) => p._id).filter(Boolean);
+      const products = partIds.length
+        ? await Product.find({ _id: { $in: partIds } }).select("_id category")
+        : [];
+      const categoryById = new Map(
+        products.map((p) => [String(p._id), p.category || ""])
+      );
+
+      result.usedParts = result.usedParts.map((p) => ({
+        ...p,
+        category: categoryById.get(String(p._id)) || "",
+      }));
+    }
+
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -206,15 +320,56 @@ router.put("/services/:id", verify, async (req, res) => {
       paymentId = "NI";
     }
 
-    // Find the service by ID and update it
-    // Exclude needPVM from being persisted (schema doesn't have this field)
-    const { needPVM, ...updateData } = req.body;
+    // Persist computed paymentId
+    if (service) {
+      service.paymentId = paymentId;
+    }
 
-    const updatedService = await Service.findOneAndUpdate(
-      { id: serviceId },
-      { ...updateData, paymentId },
-      { new: true }
-    );
+    // Exclude needPVM from being persisted (schema doesn't have this field)
+    const { needPVM, usedParts, works, ...updateData } = req.body;
+
+    // Guard: archived services should not change price or composition
+    const isArchived = service && (service.status === "Atsiskaityta" || service.status === "jb");
+
+    // If usedParts provided and not archived, enrich with unitPrice snapshots
+    if (!isArchived && Array.isArray(usedParts)) {
+      const partIds = usedParts.map((p) => p._id).filter(Boolean);
+      const products = partIds.length
+        ? await Product.find({ _id: { $in: partIds } }).select("_id price name")
+        : [];
+      const byId = new Map(products.map((p) => [String(p._id), p]));
+
+      service.usedParts = usedParts.map((p) => {
+        const prod = byId.get(String(p._id));
+        return {
+          _id: p._id,
+          name: p.name || prod?.name || "",
+          quantity: Number(p.quantity) || 0,
+          unitPrice: typeof p.unitPrice === "number" ? p.unitPrice : Number(prod?.price || 0),
+        };
+      });
+    }
+
+    // If works provided and not archived, replace full works list (keep snapshot prices)
+    if (!isArchived && Array.isArray(works)) {
+      service.works = works.map((w) => ({
+        workId: w.workId,
+        name: w.name,
+        price: Number(w.price) || 0,
+      }));
+    }
+
+    // Apply any other updates
+    if (updateData && Object.keys(updateData).length > 0) {
+      Object.assign(service, updateData);
+    }
+
+    // Recalculate if not archived and parts/works changed
+    if (!isArchived && (Array.isArray(usedParts) || Array.isArray(works))) {
+      await recalculateServicePrice(service);
+    }
+
+    const updatedService = await service.save();
     if (!updatedService) {
       return res.status(404).json({ error: "Service not found" });
     }
@@ -246,14 +401,49 @@ router.post("/services", verify, async (req, res) => {
 
     const isSigned = false;
 
-    const serviceWithId = {
-      ...serviceData,
+    // Ensure Diagnostics work exists and add it as the first work
+    const diagnosticsName = "Diagnostika";
+    let diagnosticsWork = await Work.findOne({ name: diagnosticsName });
+    if (!diagnosticsWork) {
+      diagnosticsWork = await new Work({
+        name: diagnosticsName,
+        description: "Pirminis įrenginio patikrintinimas PP",
+        defaultPrice: 19,
+      }).save();
+    }
+
+    const initialWorks = [
+      {
+        workId: diagnosticsWork._id,
+        name: diagnosticsWork.name,
+        price: diagnosticsWork.defaultPrice,
+      },
+    ];
+
+    // Determine paymentId based on needPVM flag and payment method
+    const needPVMFlag = serviceData.needPVM;
+    let creationPaymentId = null;
+    if (needPVMFlag === false) {
+      creationPaymentId = "NI";
+    } else if (needPVMFlag === true) {
+      creationPaymentId = serviceData.paymentMethod
+        ? await getNewPaymentId(serviceData.paymentMethod)
+        : null;
+    }
+
+    // Exclude needPVM and price from persistence; price is always derived
+    const { needPVM: _omitNeedPVM, price: _omitPrice, ...servicePersisted } = serviceData;
+
+    const service = new Service({
+      ...servicePersisted,
       id: customId,
       isSigned: isSigned,
-      isDeleted: false, // Explicitly set this to false for new services
-    };
+      isDeleted: false,
+      works: initialWorks,
+      paymentId: creationPaymentId,
+    });
 
-    const service = new Service(serviceWithId);
+    await recalculateServicePrice(service);
     const savedService = await service.save();
     res.status(201).json(savedService);
   } catch (err) {
@@ -522,57 +712,22 @@ router.get("/dashboard-stats", async (req, res) => {
 
 // Inventoriaus valdymas
 
-// POST /api/products - Create a new product
+// POST /api/products - Create a new simplified product
 router.post("/products", async (req, res) => {
   try {
-    // Extract data from the request body
-    const {
-      name,
-      description,
-      model,
-      category,
-      stock,
-      price,
-      ourPrice,
-      storage,
-      partNumber,
-    } = req.body;
-
-    // Validation: Check if the required fields are provided
-    if (!name || !category || !price || !storage || !partNumber) {
-      return res
-        .status(400)
-        .json({ error: "All required fields must be filled" });
-    }
-
-    // Check if the category and storage exist in the database by name
-    const categoryName = await Category.findOne({ name: category });
-    const storageName = await Storage.findOne({ locationName: storage });
-
-    if (!categoryName) {
-      return res.status(400).json({ error: "Invalid category name" });
-    }
-
-    if (!storageName) {
-      return res.status(400).json({ error: "Invalid storage location name" });
+    const { name, category, price, quantity } = req.body;
+    if (!name || !category || price === undefined) {
+      return res.status(400).json({ error: "name, category and price are required" });
     }
 
     const newProduct = new Product({
       name,
-      description,
-      model,
-      category: categoryName._id,
-      stock: stock || 0,
+      category,
       price,
-      ourPrice,
-      storage: storageName._id,
-      partNumber,
+      quantity: quantity || 0,
     });
 
-    // Save the product to the database
     const savedProduct = await newProduct.save();
-
-    // Respond with the created product
     res.status(201).json(savedProduct);
   } catch (error) {
     console.error("Error creating product:", error);
@@ -612,56 +767,23 @@ router.post("/storages", async (req, res) => {
 // Get all products with optional filtering
 router.get("/products", async (req, res) => {
   try {
-    const {
-      category,
-      storage,
-      minStock,
-      maxStock,
-      name,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { category, name, page = 1, limit = 10 } = req.query;
 
-    // Build the query object dynamically based on filters
     let query = {};
-
-    // Name filter
     if (name) {
-      query.$text = { $search: name }; // Full-text search
+      query.name = { $regex: `^${escapeRegex(name)}` , $options: "i" };
     }
-
-    // Category filter
     if (category) {
       query.category = category;
     }
 
-    // Storage filter
-    if (storage) {
-      query.storage = storage;
-    }
-
-    // Min Stock filter
-    if (minStock) {
-      query.stock = { ...query.stock, $gte: Number(minStock) };
-    }
-
-    // Max Stock filter
-    if (maxStock) {
-      query.stock = { ...query.stock, $lte: Number(maxStock) };
-    }
-
-    // Convert page and limit to numbers
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 10);
 
-    // Fetch the products with category and storage populated, apply pagination
     const products = await Product.find(query)
-      .populate("category")
-      .populate("storage")
       .skip((pageNumber - 1) * pageSize)
       .limit(pageSize);
 
-    // Get the total count of products that match the query for pagination
     const totalProducts = await Product.countDocuments(query);
 
     res.json({
@@ -671,7 +793,7 @@ router.get("/products", async (req, res) => {
       totalProducts,
     });
   } catch (error) {
-    console.error("Error fetching products:", error); // Log the error for debugging
+    console.error("Error fetching products:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -714,9 +836,7 @@ router.delete("/products/:id", verify, async (req, res) => {
 router.get("/products/:id", verify, async (req, res) => {
   try {
     const productId = req.params.id;
-    const product = await Product.findOne({ _id: productId })
-      .populate("category", "name")
-      .populate("storage", "locationName"); // Populate Storage name;
+    const product = await Product.findOne({ _id: productId });
     res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -726,54 +846,24 @@ router.get("/products/:id", verify, async (req, res) => {
 router.put("/products/:id", verify, async (req, res) => {
   try {
     const productId = req.params.id;
+    const { name, category, price, quantity } = req.body;
 
-    const {
-      name,
-      description,
-      model,
-      category,
-      stock,
-      price,
-      ourPrice,
-      storage,
-      partNumber,
-      partsUsed,
-    } = req.body;
-
-    const categoryName = await Category.findOne({ name: category });
-    const storageName = await Storage.findOne({ locationName: storage });
-
-    if (!categoryName) {
-      return res.status(400).json({ error: "Invalid category name" });
-    }
-
-    if (!storageName) {
-      return res.status(400).json({ error: "Invalid storage location name" });
-    }
-
-    const product = await Product.findOne({ _id: productId });
-    // Find the service by ID and update it
     const updatedProduct = await Product.findOneAndUpdate(
       { _id: productId },
       {
-        name,
-        description,
-        model,
-        category: categoryName._id,
-        stock: stock || 0,
-        price,
-        ourPrice,
-        storage: storageName._id,
-        partNumber,
-        partsUsed,
+        ...(name !== undefined ? { name } : {}),
+        ...(category !== undefined ? { category } : {}),
+        ...(price !== undefined ? { price } : {}),
+        ...(quantity !== undefined ? { quantity } : {}),
       },
-      { new: true } // Return the updated document
+      { new: true }
     );
+
     if (!updatedProduct) {
-      return res.status(404).json({ error: "Service not found" });
+      return res.status(404).json({ error: "Product not found" });
     }
 
-    res.status(200).json({ ...updatedProduct._doc });
+    res.status(200).json(updatedProduct);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -781,90 +871,215 @@ router.put("/products/:id", verify, async (req, res) => {
 
 router.post("/products/quantity-change", async (req, res) => {
   try {
-    const { partId, quantityChange } = req.body; // Get part ID and quantity change from request
+    const { productId, quantityChange } = req.body;
 
-    const product = await Product.findById(partId); // Find product by ID
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Adjust stock (subtract quantity for used parts, add when quantity is decreased)
-    const newStock = product.stock + quantityChange; // quantityChange could be positive or negative
-    if (newStock < 0) {
-      return res.status(400).json({ error: "Insufficient stock" });
+    const newQuantity = (product.quantity || 0) + Number(quantityChange || 0);
+    if (newQuantity < 0) {
+      return res.status(400).json({ error: "Insufficient quantity" });
     }
 
-    if (newStock > product.stock) {
-      return res
-        .status(400)
-        .json({ error: "Stock cannot be larger than the original stock" });
-    }
-
-    product.stock = newStock; // Update stock
+    product.quantity = newQuantity;
     await product.save();
 
-    res.json({ message: "Stock updated", product });
+    res.json({ message: "Quantity updated", product });
   } catch (error) {
-    console.error("Error updating product stock:", error);
+    console.error("Error updating product quantity:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-router.post("/products/submit-csv", upload.single("file"), async (req, res) => {
-  const filePath = req.file.path;
-  const categoryName = await Category.findOne({ name: "Telefonai" });
-  const storageName = await Storage.findOne({ locationName: "Kalvariju" });
-
-  fs.createReadStream(filePath)
-    .pipe(csv())
-    .on("data", async (row) => {
-      const { partId, name, ourPrice, price, quantity, model } = row;
-
-      try {
-        let product = await Product.findOne({ partNumber: partId });
-
-        if (product) {
-          // Update quantity if product exists
-          product.stock += parseInt(quantity, 10);
-        } else {
-          // Create new product if it doesn't exist
-          product = new Product({
-            name,
-            ourPrice: parseFloat(ourPrice),
-            price: parseFloat(price),
-            stock: parseInt(quantity, 10),
-            model,
-            partNumber: partId,
-            storage: storageName._id,
-            category: categoryName._id,
-          });
-        }
-
-        await product.save();
-      } catch (error) {
-        console.error(`Error processing row: ${JSON.stringify(row)}`, error);
-      }
-    })
-    .on("end", () => {
-      fs.unlinkSync(filePath); // Remove the file after processing
-      res.status(200).send("CSV file processed successfully");
-    })
-    .on("error", (error) => {
-      console.error("Error reading CSV file", error);
-      res.status(500).send("Error processing CSV file");
-    });
-});
+// CSV submission endpoint removed due to simplified product model
 
 router.get("/products-out-of-stock", async (req, res) => {
   try {
-    // Find all products where stock is 0
-    const products = await Product.find({ stock: 0 }).select("name");
+    const products = await Product.find({ quantity: 0 }).select("name");
 
-    // Send the product names as the response
     res.json(products);
   } catch (error) {
     console.error("Error fetching out-of-stock products:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Works management
+router.post("/works", verify, async (req, res) => {
+  try {
+    const { name, description, defaultPrice } = req.body;
+    if (!name || defaultPrice === undefined) {
+      return res.status(400).json({ error: "name and defaultPrice are required" });
+    }
+
+    const work = new Work({ name, description: description || "", defaultPrice });
+    const saved = await work.save();
+    res.status(201).json(saved);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get("/works", verify, async (req, res) => {
+  try {
+    const { q, page = 1, limit = 10 } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const pageSize = parseInt(limit, 10);
+
+    const query = {};
+    if (q && q.trim() !== "") {
+      query.name = { $regex: `^${escapeRegex(q.trim())}`, $options: "i" };
+    }
+
+    const works = await Work.find(query)
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .exec();
+
+    const total = await Work.countDocuments(query);
+
+    res.status(200).json({
+      works,
+      pagination: {
+        total,
+        totalPages: Math.ceil(total / pageSize),
+        currentPage: pageNumber,
+        pageSize: works.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Edit a single work item price on a service by index
+router.put("/services/:id/works/:index", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+    const index = parseInt(req.params.index, 10);
+    const { price } = req.body;
+
+    if (Number.isNaN(index) || price === undefined) {
+      return res.status(400).json({ error: "index (number) and price are required" });
+    }
+
+    const service = await Service.findOne({ id: serviceId });
+    if (!service) return res.status(404).json({ error: "Service not found" });
+
+    const isArchived = service.status === "Atsiskaityta" || service.status === "jb";
+    if (isArchived) {
+      return res.status(400).json({ error: "Archived service cannot be modified" });
+    }
+
+    if (!Array.isArray(service.works) || index < 0 || index >= service.works.length) {
+      return res.status(404).json({ error: "Work index not found" });
+    }
+
+    service.works[index].price = Number(price);
+    await recalculateServicePrice(service);
+    await service.save();
+    res.status(200).json(service);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add multiple works to a service
+router.post("/services/:id/works", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+    const { works } = req.body; // [{ workId, price? }]
+    if (!Array.isArray(works) || works.length === 0) {
+      return res.status(400).json({ error: "works array is required" });
+    }
+
+    const service = await Service.findOne({ id: serviceId });
+    if (!service) return res.status(404).json({ error: "Service not found" });
+
+    const workIds = works.map((w) => w.workId).filter(Boolean);
+    const workDocs = await Work.find({ _id: { $in: workIds } });
+    const workById = new Map(workDocs.map((w) => [String(w._id), w]));
+
+    const toAdd = works
+      .map((w) => {
+        const doc = workById.get(String(w.workId));
+        if (!doc) return null;
+        const price = w.price !== undefined ? Number(w.price) : Number(doc.defaultPrice);
+        return {
+          workId: doc._id,
+          name: doc.name,
+          price: price,
+        };
+      })
+      .filter(Boolean);
+
+    // Guard: archived should not be modified in pricing
+    const isArchived = service.status === "Atsiskaityta" || service.status === "jb";
+    if (isArchived) {
+      return res.status(400).json({ error: "Archived service cannot be modified" });
+    }
+
+    service.works = Array.isArray(service.works) ? service.works.concat(toAdd) : toAdd;
+    await recalculateServicePrice(service);
+    await service.save();
+    res.status(200).json(service);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Remove a work from a service (removes first occurrence of given workId)
+router.delete("/services/:id/works/:workId", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+    const workId = req.params.workId;
+
+    const service = await Service.findOne({ id: serviceId });
+    if (!service) return res.status(404).json({ error: "Service not found" });
+
+    if (!Array.isArray(service.works) || service.works.length === 0) {
+      return res.status(404).json({ error: "No works to remove" });
+    }
+
+    const idx = service.works.findIndex((w) => String(w.workId) === String(workId));
+    if (idx === -1) {
+      return res.status(404).json({ error: "Work not found on service" });
+    }
+
+    const isArchived = service.status === "Atsiskaityta" || service.status === "jb";
+    if (isArchived) {
+      return res.status(400).json({ error: "Archived service cannot be modified" });
+    }
+
+    service.works.splice(idx, 1);
+    await recalculateServicePrice(service);
+    await service.save();
+    res.status(200).json(service);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Explicitly trigger price recalculation
+router.post("/services/:id/recalculate-price", verify, async (req, res) => {
+  try {
+    const serviceId = req.params.id;
+    const service = await Service.findOne({ id: serviceId });
+    if (!service) return res.status(404).json({ error: "Service not found" });
+
+    const isArchived = service.status === "Atsiskaityta" || service.status === "jb";
+    if (isArchived) {
+      // No recalculation for archived; return untouched
+      return res.status(200).json(service);
+    }
+
+    await recalculateServicePrice(service);
+    await service.save();
+    res.status(200).json(service);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

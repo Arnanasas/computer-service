@@ -1,47 +1,28 @@
 const mongoose = require("mongoose");
 
+const ALLOWED_CATEGORIES = ["Other", "Phone", "PC"];
+
 const productSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
+      trim: true,
     },
-    description: String,
-    model: String,
     category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Category",
+      type: String,
+      enum: ALLOWED_CATEGORIES,
       required: true,
-    },
-    stock: {
-      type: Number,
-      default: 0,
-      min: 0,
     },
     price: {
       type: Number,
       required: true,
       min: 0,
     },
-    ourPrice: {
+    quantity: {
       type: Number,
+      default: 0,
       min: 0,
-    },
-    storage: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Storage",
-      required: true,
-    },
-    partNumber: {
-      type: String,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
     },
   },
   {
@@ -49,6 +30,6 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-productSchema.index({ name: "text", description: "text", model: "text" });
+productSchema.index({ name: 1 });
 
 module.exports = mongoose.model("Product", productSchema);

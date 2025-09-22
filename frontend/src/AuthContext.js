@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
     setLoaded(false);
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_URL}/dashboard/me`,
+        `${process.env.REACT_APP_URL}/api/dashboard/me`,
         {
           withCredentials: true,
         }

@@ -924,7 +924,7 @@ router.post("/works", verify, async (req, res) => {
 
 router.get("/works", verify, async (req, res) => {
   try {
-    const { q, page = 1, limit = 10 } = req.query;
+    const { q, page = 1, limit = 50 } = req.query;
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 10);
 

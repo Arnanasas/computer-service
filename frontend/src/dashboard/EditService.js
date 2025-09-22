@@ -181,7 +181,7 @@ export default function EditService() {
     };
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/send-msg/accept`,
+        `${process.env.REACT_APP_URL}/api/send-msg/accept`,
         values,
         {
           withCredentials: true,
@@ -207,7 +207,7 @@ export default function EditService() {
     };
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/send-msg/pick-up`,
+        `${process.env.REACT_APP_URL}/api/send-msg/pick-up`,
         values,
         {
           withCredentials: true,

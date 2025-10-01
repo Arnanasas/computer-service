@@ -76,6 +76,20 @@ function escapeRegex(str) {
   return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function parseBooleanFlag(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const v = value.trim().toLowerCase();
+    if (v === "true" || v === "1" || v === "yes") return true;
+    if (v === "false" || v === "0" || v === "no") return false;
+  }
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+  return undefined;
+}
+
 router.get("/services/:filter", verify, async (req, res) => {
   try {
     const filter = req.params.filter;
@@ -290,43 +304,46 @@ router.put("/services/:id", verify, async (req, res) => {
 
     // If needPVM is explicitly false, do NOT generate a paymentId.
     // If needPVM is undefined or true, keep the current behavior.
-    const needPVMFlag = req.body.needPVM;
-    const shouldGeneratePaymentId = !(needPVMFlag === false);
+  const needPVMFlag = parseBooleanFlag(req.body.needPVM);
 
-    let paymentId = service ? service.paymentId : null;
+  let paymentId = service ? service.paymentId : null;
 
-    if (shouldGeneratePaymentId) {
-      const isCurrentPaymentIdNumeric =
-        service && typeof service.paymentId === "number" && !isNaN(service.paymentId);
+  // When needPVM is explicitly true, always generate a fresh paymentId
+  if (needPVMFlag === true) {
+    const methodForInvoice = req.body.paymentMethod || (service ? service.paymentMethod : null);
+    paymentId = await getNewPaymentId(methodForInvoice);
+  } else if (needPVMFlag === false) {
+    // needPVM === false -> mark as No Invoice needed
+    paymentId = "NI";
+  } else {
+    // Legacy behavior when needPVM flag is not provided
+    const isCurrentPaymentIdNumeric =
+      service && typeof service.paymentId === "number" && !isNaN(service.paymentId);
 
-      // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
-      if (
-        service &&
-        req.body.paymentMethod &&
-        service.paymentMethod !== req.body.paymentMethod &&
-        (service.paymentMethod === "kortele" ||
-          service.paymentMethod === "grynais") &&
-        (req.body.paymentMethod === "kortele" ||
-          req.body.paymentMethod === "grynais")
-      ) {
-        paymentId = await getNewPaymentId(req.body.paymentMethod);
-      } else if (!service || !isCurrentPaymentIdNumeric) {
-        paymentId = req.body.paymentMethod
-          ? await getNewPaymentId(req.body.paymentMethod)
-          : null;
-      }
-    } else {
-      // needPVM === false -> mark as No Invoice needed
-      paymentId = "NI";
+    // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
+    if (
+      service &&
+      req.body.paymentMethod &&
+      service.paymentMethod !== req.body.paymentMethod &&
+      (service.paymentMethod === "kortele" ||
+        service.paymentMethod === "grynais") &&
+      (req.body.paymentMethod === "kortele" ||
+        req.body.paymentMethod === "grynais")
+    ) {
+      paymentId = await getNewPaymentId(req.body.paymentMethod);
+    } else if (!service || !isCurrentPaymentIdNumeric) {
+      const fallbackMethod = req.body.paymentMethod || (service ? service.paymentMethod : null);
+      paymentId = await getNewPaymentId(fallbackMethod);
     }
+  }
 
     // Persist computed paymentId
     if (service) {
       service.paymentId = paymentId;
     }
 
-    // Exclude needPVM from being persisted (schema doesn't have this field)
-    const { needPVM, usedParts, works, ...updateData } = req.body;
+    // Exclude needPVM and paymentId from being persisted from client payload
+    const { needPVM, usedParts, works, paymentId: _omitPaymentId, ...updateData } = req.body;
 
     // Guard: archived services should not change price or composition
     const isArchived = service && (service.status === "Atsiskaityta" || service.status === "jb");
@@ -421,15 +438,14 @@ router.post("/services", verify, async (req, res) => {
     ];
 
     // Determine paymentId based on needPVM flag and payment method
-    const needPVMFlag = serviceData.needPVM;
+  const needPVMFlag = parseBooleanFlag(serviceData.needPVM);
     let creationPaymentId = null;
-    if (needPVMFlag === false) {
-      creationPaymentId = "NI";
-    } else if (needPVMFlag === true) {
-      creationPaymentId = serviceData.paymentMethod
-        ? await getNewPaymentId(serviceData.paymentMethod)
-        : null;
-    }
+  if (needPVMFlag === false) {
+    creationPaymentId = "NI";
+  } else if (needPVMFlag === true) {
+    const methodForInvoice = serviceData.paymentMethod || null;
+    creationPaymentId = await getNewPaymentId(methodForInvoice);
+  }
 
     // Exclude needPVM and price from persistence; price is always derived
     const { needPVM: _omitNeedPVM, price: _omitPrice, ...servicePersisted } = serviceData;
@@ -556,13 +572,16 @@ router.get("/sales-data", verify, async (req, res) => {
 module.exports = router;
 
 const getNewPaymentId = async (paymentMethod) => {
-  // Only consider services that have numeric paymentId values
-  const highestPaymentService = await Service.findOne({
-    paymentMethod,
-    paymentId: { $type: "number" },
-  })
+  // Consider only services that have numeric paymentId values
+  const query = { paymentId: { $type: "number" } };
+  if (paymentMethod) {
+    query.paymentMethod = paymentMethod;
+  }
+
+  const highestPaymentService = await Service.findOne(query)
     .sort("-paymentId")
     .limit(1);
+
   if (!highestPaymentService) return 1;
   return (highestPaymentService.paymentId || 0) + 1;
 };

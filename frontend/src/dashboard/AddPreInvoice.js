@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from "react";
 import Header from "../layouts/Header";
-import { useNavigate } from "react-router-dom";
 import Footer from "../layouts/Footer";
-import axios from "axios";
-import { Button, Card, Col, Row, Form } from "react-bootstrap";
-import * as yup from "yup";
+import { Button, Card, Form } from "react-bootstrap";
 import * as formik from "formik";
 import { PDFViewer } from "@react-pdf/renderer";
 
 import PreInvoiceAct from "../documentTemplates/PreInvoiceAct";
 
 export default function AddPreInvoice() {
-  const navigate = useNavigate();
   const { Formik } = formik;
 
   const [formValues, setFormValues] = useState({});
@@ -52,6 +48,9 @@ export default function AddPreInvoice() {
 
   switchSkin(skin);
 
+
+  const preInvoiceId = new Date().toISOString().split("T")[0].split("-").reduce((_,v,i,a)=>i? _+v : v.slice(2),"");
+
   useEffect(() => {
     switchSkin(skin);
   }, [skin]);
@@ -70,117 +69,123 @@ export default function AddPreInvoice() {
 
         <Card className="card-one mt-3">
           <Card.Header>
-            <Card.Title as="h6">Pridėti inventorių</Card.Title>
+            <Card.Title as="h6">Sukurti išankstinę sąskaitą faktūrą</Card.Title>
           </Card.Header>
           <Card.Body>
             <Formik
               initialValues={{
-                price: "15",
-                preInvoiceId: "15",
+                price: "",
+                preInvoiceId: preInvoiceId,
                 clientType: "Privatus",
-                companyName: "MB Kalasta",
-                companyCode: "123",
-                pvmCode: "123",
-                address: "123",
+                companyName: "",
+                companyCode: "",
+                pvmCode: "",
+                address: "",
                 service: "Paslaugos",
               }}
               onSubmit={(values) => {
-                setFormValues(values); // Store form values in state
-                getPreInvoice(); // Show the PDFViewer
+                setFormValues(values); 
+                getPreInvoice();
               }}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
                 <Form onSubmit={handleSubmit}>
                   <Form.Group controlId="formPrice">
-                    <Form.Label>Price</Form.Label>
+                    <Form.Label>Kaina</Form.Label>
                     <Form.Control
                       type="text"
                       name="price"
                       onChange={handleChange}
                       value={values.price}
-                      className="form-control"
+                      className="form-control form-control-padding"
                     />
                   </Form.Group>
 
                   <Form.Group controlId="formPreInvoiceId">
-                    <Form.Label>Pre Invoice ID</Form.Label>
+                    <Form.Label>Išankstinės sąskaitos ID</Form.Label>
                     <Form.Control
                       type="text"
                       name="preInvoiceId"
                       onChange={handleChange}
                       value={values.preInvoiceId}
-                      className="form-control"
+                      className="form-control form-control-padding"
                     />
                   </Form.Group>
 
                   <Form.Group controlId="formClientType">
-                    <Form.Label>Client Type</Form.Label>
-                    <Form.Control
-                      type="text"
+                    <Form.Label>Kliento tipas</Form.Label>
+                    <Form.Select
                       name="clientType"
                       onChange={handleChange}
                       value={values.clientType}
-                      className="form-control"
-                    />
+                      className="form-control form-control-padding"
+                    >
+                      <option value="Privatus">Privatus</option>
+                      <option value="Įmonė">Įmonė</option>
+                    </Form.Select>
                   </Form.Group>
 
                   <Form.Group controlId="formCompanyName">
-                    <Form.Label>Company Name</Form.Label>
+                    <Form.Label>Įmonės pavadinimas</Form.Label>
                     <Form.Control
                       type="text"
                       name="companyName"
                       onChange={handleChange}
                       value={values.companyName}
-                      className="form-control"
+                      className="form-control form-control-padding"
                     />
                   </Form.Group>
 
-                  <Form.Group controlId="formCompanyCode">
-                    <Form.Label>Company Code</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="companyCode"
-                      onChange={handleChange}
-                      value={values.companyCode}
-                      className="form-control"
-                    />
-                  </Form.Group>
+                  {values.clientType === "Įmonė" && (
+                    <>
+                      <Form.Group controlId="formCompanyCode">
+                        <Form.Label>Įmonės kodas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="companyCode"
+                          onChange={handleChange}
+                          value={values.companyCode}
+                          className="form-control form-control-padding"
+                        />
+                      </Form.Group>
 
-                  <Form.Group controlId="formPvmCode">
-                    <Form.Label>PVM Code</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="pvmCode"
-                      onChange={handleChange}
-                      value={values.pvmCode}
-                      className="form-control"
-                    />
-                  </Form.Group>
+                      <Form.Group controlId="formPvmCode">
+                        <Form.Label>PVM kodas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="pvmCode"
+                          onChange={handleChange}
+                          value={values.pvmCode}
+                          className="form-control form-control-padding"
+                        />
+                      </Form.Group>
 
-                  <Form.Group controlId="formAddress">
-                    <Form.Label>Address</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="address"
-                      onChange={handleChange}
-                      value={values.address}
-                      className="form-control"
-                    />
-                  </Form.Group>
+                      <Form.Group controlId="formAddress">
+                        <Form.Label>Adresas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="address"
+                          onChange={handleChange}
+                          value={values.address}
+                          className="form-control form-control-padding"
+                        />
+                      </Form.Group>
+                    </>
+                  )}
 
                   <Form.Group controlId="formService">
-                    <Form.Label>Service</Form.Label>
+                    <Form.Label>Paslaugos</Form.Label>
                     <Form.Control
                       type="text"
                       name="service"
                       onChange={handleChange}
                       value={values.service}
-                      className="form-control"
+                      className="form-control form-control-padding"
                     />
                   </Form.Group>
 
                   <Button variant="primary" type="submit">
-                    Submit
+                    Patvirtinti
                   </Button>
                 </Form>
               )}

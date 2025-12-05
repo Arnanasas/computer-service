@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   cell: {
     paddingHorizontal: 3,
     paddingVertical: 2,
-    fontSize: 12,
+    fontSize: 10,
   },
   signaturePlaceholder: {
     textAlign: "center",

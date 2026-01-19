@@ -66,6 +66,7 @@ router.post("/winter-promotion", async (req, res) => {
         body: messageBody,
         from: "IT112",
         to: phoneE164,
+        shortenUrls: true,
       });
     } catch (twilioError) {
       console.error("Twilio error:", twilioError);

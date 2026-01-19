@@ -56,7 +56,8 @@ router.post("/winter-promotion", async (req, res) => {
     const tokenStop = generateToken(16);
     // Booking now points to WordPress page with the token
     const bookUrl = `https://it112.lt/ziemos-akcija?t=${tokenBook}`;
-    const stopUrl = `${base}/api/send-msg/winter-promotion/stop/${tokenStop}`;
+    // Stop now also points to the same WordPress page (stop flow)
+    const stopUrl = `https://it112.lt/ziemos-akcija?stop=${tokenStop}`;
 
     const messageBody = `Sveiki! Primename apie žiemos PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos būklė. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
 
@@ -123,7 +124,8 @@ router.get("/winter-promotion/:phoneNumber(\\d{8})", async (req, res) => {
     const tokenStop = generateToken(16);
     // Booking now points to WordPress page with the token
     const bookUrl = `https://it112.lt/ziemos-akcija?t=${tokenBook}`;
-    const stopUrl = `${base}/api/send-msg/winter-promotion/stop/${tokenStop}`;
+    // Stop now also points to the same WordPress page (stop flow)
+    const stopUrl = `https://it112.lt/ziemos-akcija?stop=${tokenStop}`;
 
     const messageBody = `Sveiki! Primename apie žiemos PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos būklė. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
 
@@ -230,6 +232,60 @@ router.post("/winter-promotion/book/confirm", async (req, res) => {
     return res.status(200).json({ ok: true, status: promo.status });
   } catch (err) {
     console.error("Confirm token error:", err);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// Verify stop token (JSON API for WordPress page)
+router.get("/winter-promotion/stop/verify", async (req, res) => {
+  try {
+    const token = req.query.token || req.query.stop;
+    if (!token || typeof token !== "string" || token.trim().length === 0) {
+      return res.status(400).json({ ok: false, error: "Missing token" });
+    }
+    const promo = await Promotion.findOne({ tokenStop: token.trim() }).select(
+      "status bookedAt stoppedAt createdAt"
+    );
+    if (!promo) {
+      return res.status(404).json({ ok: false, error: "Invalid token" });
+    }
+    const isStopped = promo.status === "stopped";
+    return res.status(200).json({
+      ok: true,
+      status: promo.status,
+      isStopped,
+      createdAt: promo.createdAt,
+      bookedAt: promo.bookedAt,
+      stoppedAt: promo.stoppedAt,
+    });
+  } catch (err) {
+    console.error("Verify stop token error:", err);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
+// Confirm stop token (JSON API for WordPress page)
+router.post("/winter-promotion/stop/confirm", async (req, res) => {
+  try {
+    const token = (req.body && req.body.token) || (req.query && req.query.token);
+    if (!token || typeof token !== "string" || token.trim().length === 0) {
+      return res.status(400).json({ ok: false, error: "Missing token" });
+    }
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip;
+    const ua = req.get("user-agent") || null;
+
+    const promo = await Promotion.findOne({ tokenStop: token.trim() });
+    if (!promo) {
+      return res.status(404).json({ ok: false, error: "Invalid token" });
+    }
+    promo.status = "stopped";
+    promo.stoppedAt = promo.stoppedAt || new Date();
+    promo.lastIp = ip;
+    promo.lastUserAgent = ua;
+    await promo.save();
+    return res.status(200).json({ ok: true, status: promo.status });
+  } catch (err) {
+    console.error("Confirm stop token error:", err);
     return res.status(500).json({ ok: false, error: "Server error" });
   }
 });

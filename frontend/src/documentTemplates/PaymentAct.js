@@ -1,4 +1,3 @@
-import ReactDOM from "react-dom";
 import { formatCurrencyInWords } from "../assets/helpers";
 import {
   Document,
@@ -9,31 +8,7 @@ import {
   Font,
   StyleSheet,
 } from "@react-pdf/renderer";
-
-// Font.register({
-//   family: "Gabarito",
-//   src: require("../assets/fonts/gabarito/Gabarito-Regular.ttf"),
-// });
-
-// Font.register({
-//   family: "Gabarito-Medium",
-//   src: require("../assets/fonts/gabarito/Gabarito-Medium.ttf"),
-// });
-
-Font.register({
-  family: "Inter",
-  src: require("../assets/fonts/inter/Inter_24pt-Regular.ttf"),
-});
-
-Font.register({
-  family: "Inter-Bold",
-  src: require("../assets/fonts/inter/Inter_24pt-Bold.ttf"),
-});
-
-Font.register({
-  family: "Inter-Thin",
-  src: require("../assets/fonts/inter/Inter_24pt-Light.ttf"),
-});
+import logoPng from "../assets/img/logo.png";
 
 // Create styles
 const styles = StyleSheet.create({
@@ -159,7 +134,7 @@ const PaymentActDocument = ({
     <Page size="A4" style={styles.page}>
       <View style={[styles.flex, styles.justifyBetween]}>
         <View style={styles.marginBottom2}>
-          <Image src={require("../assets/img/logo.png")} style={styles.logo} />
+          <Image src={logoPng} style={styles.logo} />
         </View>
 
         <View style={[styles.marginBottom1]}>

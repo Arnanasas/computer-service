@@ -4,18 +4,21 @@ import Footer from "../layouts/Footer";
 import axios from "axios";
 import * as yup from "yup";
 import * as formik from "formik";
-import { Card, Button, Table, Row, Col, Form } from "react-bootstrap";
+import { Card, Button, Table, Row, Col, Form, FormControl } from "react-bootstrap";
+import { Toaster, toast } from "react-hot-toast";
 
 export default function Works() {
   const { Formik } = formik;
 
   const [works, setWorks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", description: "", defaultPrice: "" });
 
   const fetchWorks = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${process.env.REACT_APP_URL}/api/dashboard/works`, {
+      const response = await axios.get(`${import.meta.env.VITE_APP_URL}/api/dashboard/works`, {
         withCredentials: true,
       });
       setWorks(Array.isArray(response.data) ? response.data : response.data?.works || []);
@@ -30,6 +33,56 @@ export default function Works() {
     fetchWorks();
   }, []);
 
+  const startEditing = (work) => {
+    setEditingId(work._id);
+    setEditForm({
+      name: work.name,
+      description: work.description || "",
+      defaultPrice: work.defaultPrice,
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditForm({ name: "", description: "", defaultPrice: "" });
+  };
+
+  const saveEdit = async () => {
+    if (!editForm.name.trim() || editForm.defaultPrice === "") return;
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/works/${editingId}`,
+        {
+          name: editForm.name.trim(),
+          description: editForm.description,
+          defaultPrice: Number(editForm.defaultPrice),
+        },
+        { withCredentials: true }
+      );
+      toast.success("Paslauga atnaujinta");
+      setEditingId(null);
+      fetchWorks();
+    } catch (error) {
+      console.error("Error updating work:", error);
+      toast.error("Nepavyko atnaujinti paslaugos");
+    }
+  };
+
+  const deleteWork = async (work) => {
+    if (!window.confirm(`Ar tikrai norite ištrinti "${work.name}"?`)) return;
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/works/${work._id}`,
+        { withCredentials: true }
+      );
+      toast.success("Paslauga ištrinta");
+      fetchWorks();
+    } catch (error) {
+      console.error("Error deleting work:", error);
+      toast.error("Nepavyko ištrinti paslaugos");
+    }
+  };
+
   const validationSchema = yup.object().shape({
     name: yup.string().trim().required("Pavadinimas yra privalomas"),
     description: yup.string().default(""),
@@ -43,6 +96,7 @@ export default function Works() {
   return (
     <React.Fragment>
       <Header />
+      <Toaster />
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
@@ -61,7 +115,7 @@ export default function Works() {
               validateOnBlur={false}
               onSubmit={async (values, { resetForm }) => {
                 try {
-                  await axios.post(`${process.env.REACT_APP_URL}/api/dashboard/works`, values, {
+                  await axios.post(`${import.meta.env.VITE_APP_URL}/api/dashboard/works`, values, {
                     withCredentials: true,
                   });
                   resetForm();
@@ -162,19 +216,69 @@ export default function Works() {
                   <th>Pavadinimas</th>
                   <th>Aprašymas</th>
                   <th>Numatyta kaina (€)</th>
+                  <th style={{ width: 180 }}>Veiksmai</th>
                 </tr>
               </thead>
               <tbody>
                 {works.map((work, idx) => (
                   <tr key={work._id || idx}>
-                    <td>{work.name}</td>
-                    <td>{work.description}</td>
-                    <td>{typeof work.defaultPrice === "number" ? work.defaultPrice.toFixed(2) : work.defaultPrice}</td>
+                    {editingId === work._id ? (
+                      <>
+                        <td>
+                          <FormControl
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            autoFocus
+                          />
+                        </td>
+                        <td>
+                          <FormControl
+                            value={editForm.description}
+                            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          />
+                        </td>
+                        <td>
+                          <FormControl
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={editForm.defaultPrice}
+                            onChange={(e) => setEditForm({ ...editForm, defaultPrice: e.target.value })}
+                          />
+                        </td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            <Button variant="success" size="sm" onClick={saveEdit}>
+                              <i className="ri-check-line"></i>
+                            </Button>
+                            <Button variant="outline-secondary" size="sm" onClick={cancelEditing}>
+                              <i className="ri-close-line"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{work.name}</td>
+                        <td>{work.description}</td>
+                        <td>{typeof work.defaultPrice === "number" ? work.defaultPrice.toFixed(2) : work.defaultPrice}</td>
+                        <td>
+                          <div className="d-flex gap-1">
+                            <Button variant="outline-primary" size="sm" onClick={() => startEditing(work)}>
+                              <i className="ri-pencil-line"></i>
+                            </Button>
+                            <Button variant="outline-danger" size="sm" onClick={() => deleteWork(work)}>
+                              <i className="ri-delete-bin-line"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 {!isLoading && works.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="text-center text-muted">
+                    <td colSpan={4} className="text-center text-muted">
                       Nėra įrašų
                     </td>
                   </tr>

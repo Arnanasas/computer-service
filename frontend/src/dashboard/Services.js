@@ -4,16 +4,16 @@ import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import Chat from "../apps/Chat";
-import { Card, Table, Pagination, Modal, Button, Form, Row, Col, Accordion } from "react-bootstrap";
+import { Card, Table, Pagination, Modal, Button, Form, Row, Col, Accordion, Badge } from "react-bootstrap";
 import { PDFViewer } from "@react-pdf/renderer";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
 
-import { FaEdit, FaTrash, FaPhone, FaChargingStation, FaSearch } from "react-icons/fa"; // Import React icons
+import { FaEdit, FaTrash, FaPhone, FaChargingStation, FaSearch } from "react-icons/fa";
 import axios from "axios";
 import io from "socket.io-client";
 
-const socket = io(`${process.env.REACT_APP_SOCKET}`);
+const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
 export default function Services() {
   const { filter = "all" } = useParams();
@@ -27,36 +27,11 @@ export default function Services() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 30; // Items per page
+  const limit = 30;
 
-  // Search state
   const [searchPhone, setSearchPhone] = useState("");
   const [searchServiceId, setSearchServiceId] = useState("");
 
-  // Socket comment
-  useEffect(() => {
-    socket.on("receive-notification", () => {
-      alert("A user wrote a new comment!");
-    });
-
-    socket.emit("register-tablet", nickname);
-
-    socket.on("capture-signature", (data) => {
-      const { link } = data;
-      window.location.href = link; // Redirect the tablet user to the link
-    });
-
-    return () => {
-      socket.off("receive-notification");
-    };
-  }, [nickname]);
-
-  const handleSignatureClick = (serviceID) => {
-    if (nickname === "tablet") {
-      window.location.href = `/capture-signature/${serviceID}`;
-    }
-    socket.emit("request-signature", { serviceID });
-  };
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -79,7 +54,7 @@ export default function Services() {
   };
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to the first page when the filter or search changes
+    setCurrentPage(1);
   }, [filter, searchPhone, searchServiceId]);
 
   const handleDelete = (serviceId) => {
@@ -88,7 +63,7 @@ export default function Services() {
     if (isConfirmed) {
       axios
         .delete(
-          `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+          `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
           {
             withCredentials: true,
           }
@@ -96,10 +71,10 @@ export default function Services() {
         .then((response) => {
           console.log("Service deleted:", response.data.message);
           setData(data.filter((item) => item.id !== serviceId));
-          // You might want to update your local state or fetch data again
         })
         .catch((error) => {
-          console.error("Error deleting service:", error);
+          const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko ištrinti serviso";
+          alert(msg);
         });
     }
   };
@@ -111,7 +86,6 @@ export default function Services() {
   }, [skin]);
 
   useEffect(() => {
-    // Fetch data with pagination and search
     const searchParams = {
       page: currentPage,
       limit,
@@ -126,17 +100,16 @@ export default function Services() {
     }
 
     axios
-      .get(`${process.env.REACT_APP_URL}/api/dashboard/services/${filter}`, {
+      .get(`${import.meta.env.VITE_APP_URL}/api/dashboard/services/${filter}`, {
         params: searchParams,
         withCredentials: true,
       })
       .then((response) => {
-        setData(response.data.services); // Update state with fetched data
-        setTotalPages(response.data.pagination.totalPages); // Set total pages for pagination
+        setData(response.data.services);
+        setTotalPages(response.data.pagination.totalPages);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
-        // logout();
       });
   }, [filter, currentPage, searchPhone, searchServiceId]);
 
@@ -153,7 +126,6 @@ export default function Services() {
   };
 
   const printPaymentAct = (index) => {
-    console.log("test");
     setPaymentAct(data[index]);
     setTimeout(() => {
       const iframe = document.querySelector("iframe.payment-act");
@@ -185,7 +157,6 @@ export default function Services() {
           </Modal.Body>
         </Modal>
 
-        {/* Search Form */}
         <Accordion className="mt-3">
           <Accordion.Item eventKey="0">
             <Accordion.Header>
@@ -246,7 +217,6 @@ export default function Services() {
                   <th>Vardas</th>
                   <th>Numeris</th>
                   <th>Modelis</th>
-                  {/* <th>Serijinis nr.</th> */}
                   <th>Gedimas</th>
                   <th>Kaina</th>
                   <th>Būsena</th>
@@ -272,20 +242,30 @@ export default function Services() {
                     <td>{item.failure}</td>
                     <td>{item.price}</td>
                     <td>
+                      <>
                       {filter === "archive" ? (
                         <div>
                           <p onClick={() => printPaymentAct(i)} className="cursor-pointer">
                             <span className="pe-none">
-                              {item.paymentMethod === "kortele" ? "CRD" : "GRN"}-{item.paymentId ? item.paymentId : "NI"}
+                              {item.paymentId ? item.paymentId : "NI"}
                             </span>
                           </p>
                         </div>
                       ) : (
                         item.status
                       )}
+                      <br />
+                      {item.paymentId && (
+                        <Badge
+                          bg="success"
+                          // className="ms-2"
+                        >
+                          Sumokėta
+                        </Badge>
+                      ) }
+                      </>
                     </td>
                     <td>
-                      {/* <Link to={`/capture-signature/${item.id}`}> */}
                       <Button
                         variant={item.isSigned ? "success" : "warning"}
                         size="sm"
@@ -295,7 +275,6 @@ export default function Services() {
                       >
                         Parašas
                       </Button>
-                      {/* </Link> */}
                     </td>
                     {filter !== "archive" && (
                       <td>

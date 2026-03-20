@@ -9,18 +9,13 @@ import { AuthProvider } from "./AuthContext";
 
 import ProtectedRoute from "./pages/ProtectedRoute";
 
-// import css
-
 import "./assets/css/remixicon.css";
-
-// import scss
 import "./scss/style.scss";
 import EditService from "./dashboard/EditService";
 import Services from "./dashboard/Services";
 import CaptureSignature from "./dashboard/CaptureSignature";
 import EditInventory from "./dashboard/EditInventory";
 
-// set skin on load
 window.addEventListener("load", function () {
   let skinMode = localStorage.getItem("skin-mode");
   let HTMLTag = document.querySelector("html");

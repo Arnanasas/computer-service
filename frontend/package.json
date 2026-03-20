@@ -1,10 +1,9 @@
 {
   "name": "dashbyte-react",
-  "homepage": "http://dashbyte-react.themepixels.me",
   "version": "1.0.2",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@fullcalendar/core": "^6.1.4",
     "@fullcalendar/daygrid": "^6.1.4",
     "@fullcalendar/react": "^6.1.4",
@@ -13,9 +12,6 @@
     "@react-jvectormap/unitedstates": "^1.0.1",
     "@react-jvectormap/world": "^1.1.2",
     "@react-pdf/renderer": "^3.1.14",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "apexcharts": "^3.37.0",
     "axios": "^1.4.0",
     "bootstrap": "^5.2.3",
@@ -23,7 +19,6 @@
     "cryptofont": "^0.1.1",
     "dayjs": "^1.11.13",
     "dompurify": "^2.4.3",
-    "dotenv": "^16.3.1",
     "feather-icons": "^4.29.0",
     "formik": "^2.4.3",
     "gridjs": "^6.0.6",
@@ -46,49 +41,22 @@
     "react-perfect-scrollbar": "^1.5.8",
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.7.0",
-    "react-scripts": "^5.0.1",
     "react-select": "^5.7.0",
     "react-signature-canvas": "^1.0.6",
     "socket.io-client": "^4.7.2",
     "styled-components": "^6.1.13",
-    "web-vitals": "^2.1.4",
     "yup": "^1.2.0"
   },
-  "size-limit": [
-    {
-      "path": "src/app.js"
-    }
-  ],
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "size": "npm run build && size-limit",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "serve": "node server.js"
   },
   "devDependencies": {
-    "@size-limit/file": "^9.0.0",
     "@types/leaflet": "^1.9.0",
-    "babel-plugin-prismjs": "^2.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
     "sass": "^1.57.1",
-    "size-limit": "^9.0.0"
+    "vite": "^6.2.4"
   }
 }

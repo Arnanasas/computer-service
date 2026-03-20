@@ -70,7 +70,7 @@ export default function EditInventory() {
   useEffect(() => {
     // Fetch service data when component mounts
     axios
-      .get(`${process.env.REACT_APP_URL}/api/dashboard/products/${productId}`, {
+      .get(`${import.meta.env.VITE_APP_URL}/api/dashboard/products/${productId}`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -103,7 +103,7 @@ export default function EditInventory() {
               onSubmit={async (values) => {
                 try {
                   const response = await axios.put(
-                    `${process.env.REACT_APP_URL}/api/dashboard/products/${productId}`,
+                    `${import.meta.env.VITE_APP_URL}/api/dashboard/products/${productId}`,
                     values,
                     {
                       withCredentials: true,

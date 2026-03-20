@@ -153,7 +153,7 @@ export default function AddService() {
                 console.log(values);
                 try {
                   const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/api/dashboard/services`,
+                    `${import.meta.env.VITE_APP_URL}/api/dashboard/services`,
                     values,
                     {
                       withCredentials: true,

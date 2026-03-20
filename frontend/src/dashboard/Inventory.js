@@ -15,10 +15,6 @@ import { Link } from "react-router-dom";
 
 import { FaEdit, FaTrash } from "react-icons/fa"; // Import React icons
 import axios from "axios";
-import io from "socket.io-client";
-
-const socket = io(`${process.env.REACT_APP_SOCKET}`);
-
 export default function Inventory() {
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
   const [skin, setSkin] = useState(currentSkin);
@@ -75,7 +71,7 @@ export default function Inventory() {
   const fetchProducts = async (page = 1) => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_URL}/api/dashboard/products`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/products`,
         {
           params: {
             name: name || undefined,
@@ -108,7 +104,7 @@ export default function Inventory() {
     if (isConfirmed) {
       axios
         .delete(
-          `${process.env.REACT_APP_URL}/api/dashboard/products/${productId}`,
+          `${import.meta.env.VITE_APP_URL}/api/dashboard/products/${productId}`,
           {
             withCredentials: true,
           }

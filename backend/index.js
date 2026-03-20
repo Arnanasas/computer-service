@@ -12,6 +12,7 @@ const authRoute = require("./routes/auth/auth");
 const authDashboard = require("./routes/auth/authDashboard");
 const messageRoute = require("./routes/message");
 const signatureRoute = require("./routes/sign");
+const paymentsV2Route = require("./routes/v2/payments");
 
 //ACCESSING THE ENVIRONMENT VARIABLES
 dotenv.config();
@@ -53,6 +54,7 @@ app.use("/api/users", authRoute);
 app.use("/api/dashboard", authDashboard);
 app.use("/api/send-msg", messageRoute);
 app.use("/api/signature", signatureRoute);
+app.use("/api/v2/payments", paymentsV2Route);
 app.use(limiter);
 
 const server = http.createServer(app); // Create an HTTP server instance
@@ -71,24 +73,24 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("receive-notification");
   });
 
-  socket.on("register-tablet", (nickname) => {
-    if (nickname === "tablet") {
-      socket.join("tablet-room");
-      console.log("Tablet user joined the room");
-    }
-  });
+  // socket.on("register-tablet", (nickname) => {
+  //   if (nickname === "tablet") {
+  //     socket.join("tablet-room");
+  //     console.log("Tablet user joined the room");
+  //   }
+  // });
 
-  // Emit a signature capture request to the tablet user
-  socket.on("request-signature", (data) => {
-    const { serviceID } = data;
-    io.to("tablet-room").emit("capture-signature", {
-      link: `/capture-signature/${serviceID}`,
-    });
-  });
+  // // Emit a signature capture request to the tablet user
+  // socket.on("request-signature", (data) => {
+  //   const { serviceID } = data;
+  //   io.to("tablet-room").emit("capture-signature", {
+  //     link: `/capture-signature/${serviceID}`,
+  //   });
+  // });
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
+  // socket.on("disconnect", () => {
+  //   console.log("user disconnected");
+  // });
 });
 
 const PORT = process.env.PORT || 4050;

@@ -10,7 +10,7 @@ import axios from "axios";
 
 import "./CaptureSignature.css";
 
-const socket = io(`${process.env.REACT_APP_SOCKET}`);
+const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
 export default function CaptureSignature() {
   const { logout, nickname } = useAuth();
@@ -75,7 +75,7 @@ export default function CaptureSignature() {
 
     try {
       const response = await axios.put(
-        `${process.env.REACT_APP_URL}/signature/save-signature/${serviceId}`,
+        `${import.meta.env.VITE_APP_URL}/signature/save-signature/${serviceId}`,
         { signature: signatureData },
         {
           withCredentials: true,
@@ -91,7 +91,7 @@ export default function CaptureSignature() {
     const fetchSignature = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/signature/get-signature/${serviceId}`,
+          `${import.meta.env.VITE_APP_URL}/signature/get-signature/${serviceId}`,
           { withCredentials: true }
         );
 

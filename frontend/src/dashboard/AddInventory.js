@@ -97,7 +97,7 @@ export default function AddInventory() {
               onSubmit={async (values) => {
                 try {
                   const response = await axios.post(
-                    `${process.env.REACT_APP_URL}/api/dashboard/products`, // Update endpoint for inventory
+                    `${import.meta.env.VITE_APP_URL}/api/dashboard/products`, // Update endpoint for inventory
                     values,
                     {
                       withCredentials: true,

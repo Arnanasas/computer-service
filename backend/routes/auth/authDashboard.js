@@ -263,6 +263,15 @@ router.delete("/services/:id", verify, async (req, res) => {
       return res.status(404).json({ error: "Service not found" });
     }
 
+    const hasInvoice = services.some(
+      (s) => s.paymentId != null && s.paymentId !== "" && s.paymentId !== "NI"
+    );
+    if (hasInvoice) {
+      return res.status(400).json({
+        error: "Cannot delete a service that has an invoice (paymentId)",
+      });
+    }
+
     // Log deletion for services with specific statuses
     for (const service of services) {
       if (service.status === "Atsiskaityta" || service.status === "jb") {
@@ -302,44 +311,12 @@ router.put("/services/:id", verify, async (req, res) => {
 
     const service = await Service.findOne({ id: serviceId });
 
-    // If needPVM is explicitly false, do NOT generate a paymentId.
-    // If needPVM is undefined or true, keep the current behavior.
-  const needPVMFlag = parseBooleanFlag(req.body.needPVM);
+    // paymentId is now managed by POST /api/v2/payments.
+    // This endpoint only marks "NI" when needPVM is explicitly false.
+    const needPVMFlag = parseBooleanFlag(req.body.needPVM);
 
-  let paymentId = service ? service.paymentId : null;
-
-  // When needPVM is explicitly true, always generate a fresh paymentId
-  if (needPVMFlag === true) {
-    const methodForInvoice = req.body.paymentMethod || (service ? service.paymentMethod : null);
-    paymentId = await getNewPaymentId(methodForInvoice);
-  } else if (needPVMFlag === false) {
-    // needPVM === false -> mark as No Invoice needed
-    paymentId = "NI";
-  } else {
-    // Legacy behavior when needPVM flag is not provided
-    const isCurrentPaymentIdNumeric =
-      service && typeof service.paymentId === "number" && !isNaN(service.paymentId);
-
-    // Check if paymentMethod changes from "kortele" to "grynais" or vice versa
-    if (
-      service &&
-      req.body.paymentMethod &&
-      service.paymentMethod !== req.body.paymentMethod &&
-      (service.paymentMethod === "kortele" ||
-        service.paymentMethod === "grynais") &&
-      (req.body.paymentMethod === "kortele" ||
-        req.body.paymentMethod === "grynais")
-    ) {
-      paymentId = await getNewPaymentId(req.body.paymentMethod);
-    } else if (!service || !isCurrentPaymentIdNumeric) {
-      const fallbackMethod = req.body.paymentMethod || (service ? service.paymentMethod : null);
-      paymentId = await getNewPaymentId(fallbackMethod);
-    }
-  }
-
-    // Persist computed paymentId
-    if (service) {
-      service.paymentId = paymentId;
+    if (needPVMFlag === false && service) {
+      service.paymentId = "NI";
     }
 
     // Exclude needPVM and paymentId from being persisted from client payload
@@ -374,6 +351,19 @@ router.put("/services/:id", verify, async (req, res) => {
         name: w.name,
         price: Number(w.price) || 0,
       }));
+    }
+
+    // Guard: cannot move to "jb" if an invoice exists
+    const hasInvoice =
+      service.paymentId != null && service.paymentId !== "" && service.paymentId !== "NI";
+    if (
+      hasInvoice &&
+      updateData.status === "jb" &&
+      service.status !== "jb"
+    ) {
+      return res.status(400).json({
+        error: "Cannot mark as jb — this service has an invoice (paymentId)",
+      });
     }
 
     // Apply any other updates
@@ -437,15 +427,13 @@ router.post("/services", verify, async (req, res) => {
       },
     ];
 
-    // Determine paymentId based on needPVM flag and payment method
-  const needPVMFlag = parseBooleanFlag(serviceData.needPVM);
+    // paymentId is now managed by POST /api/v2/payments.
+    // This endpoint only marks "NI" when needPVM is explicitly false.
+    const needPVMFlag = parseBooleanFlag(serviceData.needPVM);
     let creationPaymentId = null;
-  if (needPVMFlag === false) {
-    creationPaymentId = "NI";
-  } else if (needPVMFlag === true) {
-    const methodForInvoice = serviceData.paymentMethod || null;
-    creationPaymentId = await getNewPaymentId(methodForInvoice);
-  }
+    if (needPVMFlag === false) {
+      creationPaymentId = "NI";
+    }
 
     // Exclude needPVM and price from persistence; price is always derived
     const { needPVM: _omitNeedPVM, price: _omitPrice, ...servicePersisted } = serviceData;
@@ -968,6 +956,34 @@ router.get("/works", verify, async (req, res) => {
         pageSize: works.length,
       },
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put("/works/:id", verify, async (req, res) => {
+  try {
+    const { name, description, defaultPrice } = req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    if (description !== undefined) update.description = description;
+    if (defaultPrice !== undefined) update.defaultPrice = defaultPrice;
+
+    const work = await Work.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!work) return res.status(404).json({ error: "Work not found" });
+
+    res.json(work);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete("/works/:id", verify, async (req, res) => {
+  try {
+    const work = await Work.findByIdAndDelete(req.params.id);
+    if (!work) return res.status(404).json({ error: "Work not found" });
+
+    res.json({ message: "Work deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

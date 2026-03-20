@@ -1,17 +1,17 @@
-const express = require("express");
-const path = require("path");
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = 8080;
 
-// Serve static assets from the 'build' directory
 app.use(express.static(path.join(__dirname, "build")));
 
-// Serve index.html for all routes to enable HTML5 mode
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 app.listen(PORT, () => {
   console.log(`Frontend app is running on port ${PORT}`);
-  console.log("remix");
 });

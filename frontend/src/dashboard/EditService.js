@@ -9,7 +9,6 @@ import * as formik from "formik";
 import { useNavigate } from "react-router-dom";
 import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
-import PaymentActDocument from "../documentTemplates/PaymentAct";
 import BlackActDocument from "../documentTemplates/BlackAct";
 import DoneJobActDocument from "../documentTemplates/DoneJobAct";
  
@@ -30,17 +29,17 @@ export default function EditService() {
     price: "",
     hasCharger: false,
     status: "",
+    // profit: 0,
     isContacted: false,
   });
   const [isAcceptanceActShown, setIsAcceptanceActShown] = useState(false);
-  const [isPaymentActShown, setIsPaymentActShown] = useState(false);
+  const [existingInvoice, setExistingInvoice] = useState(null);
   const [isDoneJobActShown, setIsDoneJobActShown] = useState(false);
   const [isPaymentModalShown, setIsPaymentModalShown] = useState(false);
   const [isMessageModalShown, setIsMessageModalShown] = useState(false);
 
   const { Formik } = formik;
 
-  // Works management state
   const [serviceWorks, setServiceWorks] = useState([]);
   const [showWorkModal, setShowWorkModal] = useState(false);
   const [workQuery, setWorkQuery] = useState("");
@@ -48,7 +47,7 @@ export default function EditService() {
   const [workPage, setWorkPage] = useState(1);
   const [workLimit] = useState(10);
   const [workTotalPages, setWorkTotalPages] = useState(1);
-  const [selectedWorks, setSelectedWorks] = useState([]); // {workId, name, defaultPrice, price}
+  const [selectedWorks, setSelectedWorks] = useState([]);
   const [newWork, setNewWork] = useState({ name: "", description: "", defaultPrice: "" });
   const isArchived = ["Atsiskaityta", "jb"].includes((data && data.status) || "");
 
@@ -102,7 +101,7 @@ export default function EditService() {
   useEffect(() => {
     // Fetch service data when component mounts
     axios
-      .get(`${process.env.REACT_APP_URL}/api/dashboard/service/${serviceId}`, {
+      .get(`${import.meta.env.VITE_APP_URL}/api/dashboard/service/${serviceId}`, {
         withCredentials: true,
       })
       .then((response) => {
@@ -127,6 +126,16 @@ export default function EditService() {
         console.error("Error fetching service data:", error);
       });
   }, [serviceId]);
+
+  useEffect(() => {
+    if (!data.id) return;
+    axios
+      .get(`${import.meta.env.VITE_APP_URL}/api/v2/payments/service/${data.id}`, {
+        withCredentials: true,
+      })
+      .then((res) => setExistingInvoice(res.data))
+      .catch(() => setExistingInvoice(null));
+  }, [data.id]);
 
   const getAcceptanceAct = () => {
     setIsAcceptanceActShown(true);
@@ -181,7 +190,7 @@ export default function EditService() {
     };
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/api/send-msg/accept`,
+        `${import.meta.env.VITE_APP_URL}/api/send-msg/accept`,
         values,
         {
           withCredentials: true,
@@ -207,7 +216,7 @@ export default function EditService() {
     };
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/api/send-msg/pick-up`,
+        `${import.meta.env.VITE_APP_URL}/api/send-msg/pick-up`,
         values,
         {
           withCredentials: true,
@@ -226,14 +235,6 @@ export default function EditService() {
     }
   };
 
-  const printPaymentAct = () => {
-    setIsPaymentActShown(true);
-
-    setTimeout(() => {
-      const iframe = document.querySelector("iframe.payment-act");
-      iframe.contentWindow.print();
-    }, 600);
-  };
 
   const printBlackAct = () => {
     setIsBlackActShown(true);
@@ -265,7 +266,7 @@ export default function EditService() {
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_URL}/api/dashboard/products`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/products`,
         {
           params: {
             name: query.name || undefined,
@@ -285,7 +286,7 @@ export default function EditService() {
   const updatePartStock = async (partId, quantityChange) => {
     try {
       await axios.post(
-        `${process.env.REACT_APP_URL}/api/dashboard/products/quantity-change`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/products/quantity-change`,
         {
           partId,
           quantityChange, // Send part ID and quantity change to the backend
@@ -303,7 +304,7 @@ export default function EditService() {
     const fetchWorks = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_URL}/api/dashboard/works`,
+          `${import.meta.env.VITE_APP_URL}/api/dashboard/works`,
           {
             params: { q: workQuery, page: workPage, limit: workLimit },
             withCredentials: true,
@@ -347,7 +348,7 @@ export default function EditService() {
         })),
       };
       const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}/works`,
         payload,
         { withCredentials: true }
       );
@@ -364,7 +365,7 @@ export default function EditService() {
   const removeWorkFromService = async (workId) => {
     try {
       const response = await axios.delete(
-        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works/${workId}`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}/works/${workId}`,
         { withCredentials: true }
       );
       const updated = response.data;
@@ -378,7 +379,7 @@ export default function EditService() {
   const recalculatePrice = async () => {
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/recalculate-price`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}/recalculate-price`,
         {},
         { withCredentials: true }
       );
@@ -394,7 +395,7 @@ export default function EditService() {
     if (!newWork.name || newWork.defaultPrice === "") return;
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/dashboard/works`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/works`,
         {
           name: newWork.name,
           description: newWork.description,
@@ -495,7 +496,7 @@ export default function EditService() {
     try {
       const usedParts = parts.map((p) => ({ _id: p._id, name: p.name, quantity: p.quantity }));
       const response = await axios.put(
-        `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
         { usedParts },
         { withCredentials: true }
       );
@@ -519,7 +520,7 @@ export default function EditService() {
   const createProduct = async () => {
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_URL}/api/dashboard/products`,
+        `${import.meta.env.VITE_APP_URL}/api/dashboard/products`,
         {
           name: newProduct.name,
           category: newProduct.category,
@@ -604,7 +605,7 @@ export default function EditService() {
 
                 try {
                   const response = await axios.put(
-                    `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+                    `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
                     { ...values, usedParts: partsUsed },
                     {
                       withCredentials: true,
@@ -629,7 +630,7 @@ export default function EditService() {
                 hasCharger: Boolean(data.hasCharger), // Convert to boolean
                 status: data.status || "",
                 isContacted: Boolean(data.isContacted), // Convert to boolean
-                profit: data.profit || "",
+                profit: data.profit || "0",
               }}
               enableReinitialize={true}
             >
@@ -879,7 +880,7 @@ export default function EditService() {
                                       try {
                                         axios
                                           .put(
-                                            `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}/works/${idx}`,
+                                            `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}/works/${idx}`,
                                             { price: Number(val) },
                                             { withCredentials: true }
                                           )
@@ -1010,6 +1011,21 @@ export default function EditService() {
                     >
                       Atliktų darbų aktas
                     </Button>
+                    {existingInvoice && existingInvoice.pdfUrl && (
+                      <Button
+                        onClick={() =>
+                          window.open(
+                            `${import.meta.env.VITE_APP_URL}${existingInvoice.pdfUrl}`,
+                            "_blank"
+                          )
+                        }
+                        variant="success"
+                        type="button"
+                        className="mx-2"
+                      >
+                        Atsisiųsti sąskaitą {existingInvoice.payment?.seriesNumber ? `(${existingInvoice.payment.seriesNumber})` : ""}
+                      </Button>
+                    )}
                   </Form>
 
                   {isDoneJobActShown && (
@@ -1127,21 +1143,54 @@ export default function EditService() {
         <Modal.Body>
           <Formik
             onSubmit={async (values) => {
-    try {
-      const response = await axios.put(
-                  `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+              try {
+                const response = await axios.put(
+                  `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
                   { ...values, status: "Atsiskaityta" },
-                  {
-                    withCredentials: true,
-                  }
+                  { withCredentials: true }
                 );
 
-                setData((data) => ({ ...data, ...values, ...response.data }));
+                setData((prev) => ({ ...prev, ...values, ...response.data }));
+
+                const paymentPayload = {
+                  serviceId: data.id,
+                  needPVM: values.needPVM,
+                };
+
                 if (values.needPVM) {
-                  printPaymentAct();
+                  paymentPayload.paymentMethod = values.paymentMethod;
+                  paymentPayload.paidDate = values.paidDate;
+                  paymentPayload.clientType = values.clientType;
+                  paymentPayload.clientName = data.name;
+                  paymentPayload.amount = values.price;
+                  paymentPayload.serviceName = values.service;
+                  if (values.clientType === "juridinis") {
+                    paymentPayload.companyName = values.companyName;
+                    paymentPayload.companyCode = values.companyCode;
+                    paymentPayload.pvmCode = values.pvmCode;
+                    paymentPayload.address = values.address;
+                  }
                 }
+
+                const paymentRes = await axios.post(
+                  `${import.meta.env.VITE_APP_URL}/api/v2/payments`,
+                  paymentPayload,
+                  { withCredentials: true }
+                );
+
+                if (values.needPVM && paymentRes.data.pdfUrl) {
+                  setExistingInvoice(paymentRes.data);
+                  window.open(
+                    `${import.meta.env.VITE_APP_URL}${paymentRes.data.pdfUrl}`,
+                    "_blank"
+                  );
+                }
+
+                setIsPaymentModalShown(false);
+                toast.success("Mokėjimas sėkmingai išsaugotas!");
               } catch (error) {
-                console.log(error);
+                console.error(error);
+                toast.error("Nepavyko išsaugoti mokėjimo");
               }
             }}
             //   on
@@ -1159,6 +1208,7 @@ export default function EditService() {
               address: data.address || "",
               service: data.service || "Kompiuterio remontas",
               price: data.price,
+              profit: data.profit || 0,
               failure: data.failure,
               needPVM: Boolean(data.needPVM),
             }}
@@ -1349,23 +1399,6 @@ export default function EditService() {
                   </Button>
                 </Form>
 
-                {isPaymentActShown && (
-                  <PDFViewer className="payment-act d-none">
-                    <PaymentActDocument
-                      price={values.price}
-                      paymentMethod={values.paymentMethod}
-                      paymentId={values.paymentId}
-                      clientType={values.clientType}
-                      paidDate={values.paidDate}
-                      companyName={values.companyName}
-                      companyCode={values.companyCode}
-                      pvmCode={values.pvmCode}
-                      address={values.address}
-                      service={values.service}
-                      clientName={data.name}
-                    />
-                  </PDFViewer>
-                )}
               </>
             )}
           </Formik>
@@ -1516,14 +1549,16 @@ export default function EditService() {
               };
     try {
       await axios.put(
-                  `${process.env.REACT_APP_URL}/api/dashboard/services/${serviceId}`,
+                  `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
                   { ...data, status: "jb", paidDate: combinedData.date },
                   {
                     withCredentials: true,
                   }
                 );
               } catch (error) {
-                console.log(error);
+                const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko atnaujinti serviso";
+                toast.error(msg);
+                return;
               }
               setBlackActData(combinedData);
               setShowBlackActModal(false);

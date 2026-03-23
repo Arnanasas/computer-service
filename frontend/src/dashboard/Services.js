@@ -4,7 +4,7 @@ import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import Chat from "../apps/Chat";
-import { Card, Table, Pagination, Modal, Button, Form, Row, Col, Accordion, Badge } from "react-bootstrap";
+import { Card, Table, Pagination, Offcanvas, Button, Form, Row, Col, Accordion, Badge } from "react-bootstrap";
 import { PDFViewer } from "@react-pdf/renderer";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
@@ -14,6 +14,15 @@ import axios from "axios";
 import io from "socket.io-client";
 
 const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
+
+const statusConfig = {
+  "Taisoma vietoje": { bg: "primary", label: "Taisoma vietoje" },
+  "Neišsiųsta":      { bg: "warning", label: "Neišsiųsta" },
+  "Taisoma kitur":   { bg: "info",    label: "Taisoma kitur" },
+  "Sutaisyta, pranešta": { bg: "success", label: "Sutaisyta, pranešta" },
+  "Atsiskaityta":    { bg: "dark",    label: "Atsiskaityta" },
+  "jb":              { bg: "secondary", label: "JB" },
+};
 
 export default function Services() {
   const { filter = "all" } = useParams();
@@ -32,20 +41,17 @@ export default function Services() {
   const [searchPhone, setSearchPhone] = useState("");
   const [searchServiceId, setSearchServiceId] = useState("");
 
+  const [showChat, setShowChat] = useState(false);
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
       const btnWhite = document.getElementsByClassName("btn-white");
-
       for (const btn of btnWhite) {
         btn.classList.add("btn-outline-primary");
         btn.classList.remove("btn-white");
       }
     } else {
-      const btnOutlinePrimary = document.getElementsByClassName(
-        "btn-outline-primary"
-      );
-
+      const btnOutlinePrimary = document.getElementsByClassName("btn-outline-primary");
       for (const btn of btnOutlinePrimary) {
         btn.classList.remove("btn-outline-primary");
         btn.classList.add("btn-white");
@@ -64,12 +70,9 @@ export default function Services() {
       axios
         .delete(
           `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
-          {
-            withCredentials: true,
-          }
+          { withCredentials: true }
         )
         .then((response) => {
-          console.log("Service deleted:", response.data.message);
           setData(data.filter((item) => item.id !== serviceId));
         })
         .catch((error) => {
@@ -117,12 +120,9 @@ export default function Services() {
     setCurrentPage(pageNumber);
   };
 
-  const [show, setShow] = useState(false);
-
-  const handleClose = () => setShow(false);
-  const handleShow = (itemId) => {
-    setShow(true);
+  const handleOpenChat = (itemId) => {
     setSelectedItemId(itemId);
+    setShowChat(true);
   };
 
   const printPaymentAct = (index) => {
@@ -131,6 +131,11 @@ export default function Services() {
       const iframe = document.querySelector("iframe.payment-act");
       iframe.contentWindow.print();
     }, 600);
+  };
+
+  const getStatusBadge = (status) => {
+    const config = statusConfig[status] || { bg: "secondary", label: status || "—" };
+    return <Badge bg={config.bg} className="px-2 py-1">{config.label}</Badge>;
   };
 
   return (
@@ -143,19 +148,14 @@ export default function Services() {
           </div>
         </div>
 
-        <Modal
-          show={show}
-          onHide={handleClose}
-          size="xl"
-          aria-labelledby="contained-modal-title-vcenter"
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Komentarai</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Chat itemId={selectedItemId}></Chat>
-          </Modal.Body>
-        </Modal>
+        <Offcanvas show={showChat} onHide={() => setShowChat(false)} placement="start" style={{ width: "540px" }}>
+          <Offcanvas.Header closeButton>
+            <Offcanvas.Title>Komentarai — #{selectedItemId}</Offcanvas.Title>
+          </Offcanvas.Header>
+          <Offcanvas.Body className="d-flex flex-column p-0 overflow-hidden">
+            {selectedItemId && <Chat itemId={selectedItemId} />}
+          </Offcanvas.Body>
+        </Offcanvas>
 
         <Accordion className="mt-3">
           <Accordion.Item eventKey="0">
@@ -210,108 +210,92 @@ export default function Services() {
             <Card.Title as="h6">Aktyvūs servisai</Card.Title>
           </Card.Header>
           <Card.Body>
-            <Table striped bordered hover>
+            <Table hover className="table-sm align-middle">
               <thead>
                 <tr>
-                  <th style={{ width: "90px" }}>ID</th>
-                  <th>Vardas</th>
-                  <th>Numeris</th>
-                  <th>Modelis</th>
+                  <th style={{ width: 70 }}>ID</th>
+                  <th>Klientas</th>
+                  <th>Įrenginys</th>
                   <th>Gedimas</th>
-                  <th>Kaina</th>
-                  <th>Būsena</th>
-                  <th>Pasirašytas?</th>
-                  {filter !== "archive" && <th>Info</th>}
-                  <th>Veiksmai</th>
+                  <th style={{ width: 80 }}>Kaina</th>
+                  <th style={{ width: 160 }}>Būsena</th>
+                  {filter !== "archive" && <th style={{ width: 70 }}>Info</th>}
+                  <th style={{ width: 90 }}>Veiksmai</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((item, i) => (
                   <tr key={item.id}>
                     <td>
-                      <Button
-                        variant="primary"
-                        onClick={() => handleShow(item.id)}
+                      <Badge
+                        bg="blue"
+                        text="white"
+                        className="border fw-semibold px-2 py-1 bg-blue border-radius-sm"
+                        style={{ cursor: "pointer", fontSize: "0.85rem", backgroundColor: "#0084FF" }}
+                        onClick={() => handleOpenChat(item.id)}
                       >
-                        {item.id}
-                      </Button>
+                        #{item.id}
+                      </Badge>
                     </td>
-                    <td>{item.name}</td>
-                    <td>{item.number}</td>
-                    <td>{item.deviceModel}</td>
-                    <td>{item.failure}</td>
-                    <td>{item.price}</td>
                     <td>
-                      <>
-                      {filter === "archive" ? (
-                        <div>
-                          <p onClick={() => printPaymentAct(i)} className="cursor-pointer">
-                            <span className="pe-none">
-                              {item.paymentId ? item.paymentId : "NI"}
-                            </span>
-                          </p>
-                        </div>
-                      ) : (
-                        item.status
+                      <div className="fw-medium">{item.name}</div>
+                      <small className="text-muted">{item.number}</small>
+                    </td>
+                    <td>
+                      <div>{item.deviceModel}</div>
+                      {item.devicePassword && (
+                        <small className="text-muted">
+                          <i className="ri-lock-2-line me-1"></i>{item.devicePassword}
+                        </small>
                       )}
-                      <br />
-                      {item.paymentId && (
-                        <Badge
-                          bg="success"
-                          // className="ms-2"
-                        >
-                          Sumokėta
-                        </Badge>
-                      ) }
-                      </>
                     </td>
+                    <td>{item.failure}</td>
+                    <td className="fw-medium">€{parseFloat(item.price || 0).toFixed(2)}</td>
                     <td>
-                      <Button
-                        variant={item.isSigned ? "success" : "warning"}
-                        size="sm"
-                        type="submit"
-                        className="mx-2"
-                        onClick={() => handleSignatureClick(item.id)}
-                      >
-                        Parašas
-                      </Button>
+                      {filter === "archive" ? (
+                        <span
+                          onClick={() => printPaymentAct(i)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {getStatusBadge(item.status)}
+                          {item.paymentId && (
+                            <Badge bg="success" className="px-2 py-1">
+                              {item.paymentId}
+                            </Badge>
+                          )}
+                        </span>
+                      ) : (
+                        <>
+                          {getStatusBadge(item.status)}
+                          {item.paymentId && (
+                            <Badge bg="success" className="px-2 py-1">Sumokėta</Badge>
+                          )}
+                        </>
+                      )}
                     </td>
                     {filter !== "archive" && (
                       <td>
-                        {item.hasCharger ? (
-                          <FaChargingStation
-                            className="me-2"
-                            style={{ color: "#33d685" }}
-                          />
-                        ) : (
-                          <FaChargingStation
-                            className="me-2"
-                            style={{ color: "#dc3545" }}
-                          />
-                        )}
-                        {item.isContacted ? (
-                          <FaPhone
-                            className="me-2"
-                            style={{ color: "#33d685" }}
-                          />
-                        ) : (
-                          <FaPhone
-                            className="me-2"
-                            style={{ color: "#dc3545" }}
-                          />
-                        )}
+                        <FaChargingStation
+                          className="me-2"
+                          style={{ color: item.hasCharger ? "#33d685" : "#dc3545" }}
+                        />
+                        <FaPhone
+                          style={{ color: item.isContacted ? "#33d685" : "#dc3545" }}
+                        />
                       </td>
                     )}
                     <td>
-                      <Link to={`/edit/${item.id}`}>
-                        <FaEdit />
-                      </Link>
-                      <button
-                        className="btn btn-link text-danger"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <FaTrash />
-                      </button>
+                      <div className="d-flex gap-1">
+                        <Link to={`/edit/${item.id}`} className="btn btn-sm btn-outline-primary">
+                          <FaEdit />
+                        </Link>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

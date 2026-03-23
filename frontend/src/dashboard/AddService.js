@@ -17,6 +17,7 @@ import {
 } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
+import { Toaster, toast } from "react-hot-toast";
 
 // Device makes list with options for react-select
 const deviceMakesOptions = [
@@ -133,6 +134,7 @@ export default function AddService() {
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
+      <Toaster />
       <div className="main main-app p-3 p-lg-4">
         <div className="d-flex align-items-center justify-content-between mb-4">
           <div>
@@ -149,20 +151,20 @@ export default function AddService() {
               validationSchema={validationSchema}
               validateOnChange={false}
               validateOnBlur={false}
-              onSubmit={async (values) => {
-                console.log(values);
+              onSubmit={async (values, { setSubmitting }) => {
                 try {
-                  const response = await axios.post(
+                  await axios.post(
                     `${import.meta.env.VITE_APP_URL}/api/dashboard/services`,
                     values,
-                    {
-                      withCredentials: true,
-                    }
+                    { withCredentials: true }
                   );
-                  console.log(response.data);
+                  toast.success("Servisas sėkmingai sukurtas!");
                   navigate("/services/all");
                 } catch (error) {
-                  console.log(error);
+                  const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko sukurti serviso";
+                  toast.error(msg);
+                } finally {
+                  setSubmitting(false);
                 }
               }}
               initialValues={{
@@ -179,7 +181,7 @@ export default function AddService() {
                 isContacted: false,
               }}
             >
-              {({ handleSubmit, handleChange, values, touched, errors, setFieldValue }) => (
+              {({ handleSubmit, handleChange, values, touched, errors, setFieldValue, isSubmitting }) => (
                 <Form onSubmit={handleSubmit}>
                   {/* Main Information Section */}
                   <h6 className="mb-3 text-primary">Pagrindinė informacija</h6>
@@ -470,15 +472,16 @@ export default function AddService() {
                   />
                   
                   <div className="d-flex gap-2">
-                    <Button variant="primary" type="submit" style={{justifyContent: "center", display: "flex"}} tabIndex="12" size="md">
+                    <Button variant="primary" type="submit" style={{justifyContent: "center", display: "flex"}} tabIndex="12" size="md" disabled={isSubmitting}>
                       <i className="ri-save-line me-2"></i>
-                      Sukurti servisą
+                      {isSubmitting ? "Kuriama..." : "Sukurti servisą"}
                     </Button>
                     <Button 
                       variant="outline-secondary" 
                       type="button" 
                       onClick={() => navigate("/services/all")}
                       tabIndex="13"
+                      disabled={isSubmitting}
                     >
                       <i className="ri-close-line me-2"></i>
                       Atšaukti

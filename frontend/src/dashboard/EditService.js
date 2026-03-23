@@ -50,6 +50,8 @@ export default function EditService() {
   const [selectedWorks, setSelectedWorks] = useState([]);
   const [newWork, setNewWork] = useState({ name: "", description: "", defaultPrice: "" });
   const isArchived = ["Atsiskaityta", "jb"].includes((data && data.status) || "");
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [isBlackActLoading, setIsBlackActLoading] = useState(false);
 
   const validationSchema = yup.object().shape({
     id: yup.string().required(),
@@ -594,27 +596,26 @@ export default function EditService() {
           <Card.Body>
             <Formik
               validationSchema={validationSchema}
-              onSubmit={async (values) => {
-                console.log(values);
-
+              onSubmit={async (values, { setSubmitting }) => {
                 const partsUsed = selectedParts.map((part) => ({
-                  _id: part._id, // Assuming part._id is the partId
+                  _id: part._id,
                   name: part.name,
                   quantity: part.quantity,
                 }));
 
                 try {
-                  const response = await axios.put(
+                  await axios.put(
                     `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
                     { ...values, usedParts: partsUsed },
-                    {
-                      withCredentials: true,
-                    }
+                    { withCredentials: true }
                   );
-                  console.log(response.data);
+                  toast.success("Servisas sėkmingai atnaujintas!");
                   navigate(-1);
                 } catch (error) {
-                  console.log(error);
+                  const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko atnaujinti serviso";
+                  toast.error(msg);
+                } finally {
+                  setSubmitting(false);
                 }
               }}
               //   on
@@ -634,7 +635,7 @@ export default function EditService() {
               }}
               enableReinitialize={true}
             >
-              {({ handleSubmit, handleChange, values, touched, errors }) => (
+              {({ handleSubmit, handleChange, values, touched, errors, isSubmitting }) => (
                 <>
                   <Form onSubmit={handleSubmit}>
                     <Row>
@@ -983,14 +984,15 @@ export default function EditService() {
                         </Button>
                       </div>
                     </Row>
-                    <Button variant="primary" type="submit" className="mx-2">
-                      Patvirtinti
+                    <Button variant="primary" type="submit" className="mx-2" disabled={isSubmitting}>
+                      {isSubmitting ? "Saugoma..." : "Patvirtinti"}
                     </Button>
                     <Button
                       onClick={getAcceptanceAct}
                       variant="secondary"
                       type="button"
                       className="mx-2"
+                      disabled={isSubmitting}
                     >
                       Priėmimo kvitas
                     </Button>
@@ -999,6 +1001,7 @@ export default function EditService() {
                       variant="secondary"
                       type="button"
                       className="mx-2"
+                      disabled={isSubmitting}
                     >
                       Mokėjimo kvitas
                     </Button>
@@ -1007,7 +1010,7 @@ export default function EditService() {
                       variant="secondary"
                       type="button"
                       className="mx-2"
-                      disabled={!data.paidDate}
+                      disabled={isSubmitting || !data.paidDate}
                     >
                       Atliktų darbų aktas
                     </Button>
@@ -1142,7 +1145,8 @@ export default function EditService() {
         </Modal.Header>
         <Modal.Body>
           <Formik
-            onSubmit={async (values) => {
+            onSubmit={async (values, { setSubmitting }) => {
+              setIsPaymentLoading(true);
               try {
                 const response = await axios.put(
                   `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
@@ -1189,8 +1193,11 @@ export default function EditService() {
                 setIsPaymentModalShown(false);
                 toast.success("Mokėjimas sėkmingai išsaugotas!");
               } catch (error) {
-                console.error(error);
-                toast.error("Nepavyko išsaugoti mokėjimo");
+                const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko išsaugoti mokėjimo";
+                toast.error(msg);
+              } finally {
+                setIsPaymentLoading(false);
+                setSubmitting(false);
               }
             }}
             //   on
@@ -1394,8 +1401,8 @@ export default function EditService() {
                     </div>
                   </Form.Group>
 
-                  <Button variant="primary" type="submit">
-                    Išsaugoti ir spausdinti
+                  <Button variant="primary" type="submit" disabled={isPaymentLoading}>
+                    {isPaymentLoading ? "Saugoma..." : "Išsaugoti ir spausdinti"}
                   </Button>
                 </Form>
 
@@ -1537,8 +1544,9 @@ export default function EditService() {
                 .string()
                 .required("Issue Description is required"),
             })}
-            onSubmit={async (values) => {
-              const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+            onSubmit={async (values, { setSubmitting }) => {
+              setIsBlackActLoading(true);
+              const today = new Date().toISOString().split("T")[0];
               const combinedData = {
                 price: data.price,
                 serviceId: data.id,
@@ -1547,22 +1555,24 @@ export default function EditService() {
                 date: today,
                 name: data.name,
               };
-    try {
-      await axios.put(
+              try {
+                await axios.put(
                   `${import.meta.env.VITE_APP_URL}/api/dashboard/services/${serviceId}`,
                   { ...data, status: "jb", paidDate: combinedData.date },
-                  {
-                    withCredentials: true,
-                  }
+                  { withCredentials: true }
                 );
               } catch (error) {
                 const msg = error.response?.data?.error || error.response?.data?.message || "Nepavyko atnaujinti serviso";
                 toast.error(msg);
+                setIsBlackActLoading(false);
+                setSubmitting(false);
                 return;
               }
               setBlackActData(combinedData);
               setShowBlackActModal(false);
               printBlackAct();
+              setIsBlackActLoading(false);
+              setSubmitting(false);
             }}
           >
             {({ handleSubmit, handleChange, values, touched, errors }) => (
@@ -1600,8 +1610,8 @@ export default function EditService() {
                   </Form.Control.Feedback>
                 </Form.Group>
 
-                <Button variant="primary" type="submit">
-                  Generate BlackAct
+                <Button variant="primary" type="submit" disabled={isBlackActLoading}>
+                  {isBlackActLoading ? "Generuojama..." : "Generate BlackAct"}
                 </Button>
               </Form>
             )}

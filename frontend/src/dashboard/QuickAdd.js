@@ -2,40 +2,27 @@ import React, { useEffect, useState } from "react";
 import Header from "../layouts/Header";
 import { useNavigate } from "react-router-dom";
 import Footer from "../layouts/Footer";
-import { Link } from "react-router-dom";
 import axios from "axios";
-import {
-  Button,
-  Card,
-  Col,
-  Nav,
-  OverlayTrigger,
-  Row,
-  Tooltip,
-  Form,
-} from "react-bootstrap";
+import { Button, Card, Col, Row, Form, Modal } from "react-bootstrap";
 import * as yup from "yup";
 import * as formik from "formik";
+import toast from "react-hot-toast";
 
 export default function QuickAdd() {
   const navigate = useNavigate();
   const { Formik } = formik;
 
-  const validationSchema = yup.object().shape({
-    id: yup.string(),
-    name: yup.string().required("Name is required"),
-    number: yup
-      .string()
-      //   .matches(/^(\+)?(\d|\s|-)+$/, "Invalid number format")
-      .required("Number is required"),
-    deviceModel: yup.string().required("Device Model is required"),
-    deviceSerial: yup.string(),
-    devicePassword: yup.string(),
-    failure: yup.string().required("Failure is required"),
-    price: yup.number().required("Price is required"),
-    hasCharger: yup.boolean().required("Has Charger is required"),
-    status: yup.string().required("Status is required"),
-    isContacted: yup.boolean().required("Is Contacted is required"),
+  const [isPaymentModalShown, setIsPaymentModalShown] = useState(false);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [saleData, setSaleData] = useState({ itemName: "", price: "" });
+
+  const itemValidationSchema = yup.object().shape({
+    itemName: yup.string().required("Prekės pavadinimas privalomas"),
+    price: yup
+      .number()
+      .typeError("Kaina turi būti skaičius")
+      .positive("Kaina turi būti didesnė už 0")
+      .required("Kaina privaloma"),
   });
 
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
@@ -44,7 +31,6 @@ export default function QuickAdd() {
   const switchSkin = (skin) => {
     if (skin === "dark") {
       const btnWhite = document.getElementsByClassName("btn-white");
-
       for (const btn of btnWhite) {
         btn.classList.add("btn-outline-primary");
         btn.classList.remove("btn-white");
@@ -53,7 +39,6 @@ export default function QuickAdd() {
       const btnOutlinePrimary = document.getElementsByClassName(
         "btn-outline-primary"
       );
-
       for (const btn of btnOutlinePrimary) {
         btn.classList.remove("btn-outline-primary");
         btn.classList.add("btn-white");
@@ -79,272 +64,62 @@ export default function QuickAdd() {
 
         <Card className="card-one mt-3">
           <Card.Header>
-            <Card.Title as="h6">Prekės pardavimas</Card.Title>
+            <Card.Title as="h6">Greitas pardavimas</Card.Title>
           </Card.Header>
           <Card.Body>
             <Formik
-              validationSchema={validationSchema}
-              onSubmit={async (values) => {
-                console.log(values);
-                try {
-                  const response = await axios.post(
-                    `${import.meta.env.VITE_APP_URL}/api/dashboard/services`,
-                    values,
-                    {
-                      withCredentials: true,
-                    }
-                  );
-                  console.log(response.data);
-                  navigate("/services/all");
-                } catch (error) {
-                  console.log(error);
-                }
+              validationSchema={itemValidationSchema}
+              onSubmit={(values) => {
+                setSaleData(values);
+                setIsPaymentModalShown(true);
               }}
-              on
-              initialValues={{
-                id: "0000000-0",
-                name: "Pardavimas",
-                number: "0",
-                deviceModel: "0",
-                deviceSerial: "0",
-                devicePassword: "0",
-                failure: "0",
-                price: "",
-                profit: 0,
-                hasCharger: false,
-                status: "Taisoma vietoje",
-                isContacted: false,
-              }}
+              initialValues={{ itemName: "", price: "" }}
             >
               {({ handleSubmit, handleChange, values, touched, errors }) => (
                 <Form onSubmit={handleSubmit}>
-                  {/* <Row>
+                  <Row>
                     <Col md={6}>
                       <div className="mb-3">
-                        <Form.Label htmlFor="id">ID</Form.Label>
+                        <Form.Label htmlFor="itemName">
+                          Parduodama prekė
+                        </Form.Label>
                         <Form.Control
                           type="text"
-                          id="id"
-                          name="id"
-                          value={values.id}
+                          id="itemName"
+                          name="itemName"
+                          value={values.itemName}
                           onChange={handleChange}
-                          isValid={touched.id && !errors.id}
-                          readOnly
-                        />
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label htmlFor="name">Vardas Pavardė</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="name"
-                          name="name"
-                          value={values.name}
-                          onChange={handleChange}
-                          isInvalid={!!errors.name}
-                          isValid={touched.name && !errors.name}
-                          tabIndex="2"
-                          readOnly
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.name}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="number">Tel. Nr.</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="number"
-                          name="number"
-                          value={values.number}
-                          onChange={handleChange}
-                          isInvalid={!!errors.number}
-                          isValid={touched.number && !errors.number}
+                          isInvalid={touched.itemName && !!errors.itemName}
+                          isValid={touched.itemName && !errors.itemName}
                           tabIndex="1"
-                          readOnly
+                          autoFocus
                         />
                         <Form.Control.Feedback type="invalid">
-                          {errors.number}
+                          {errors.itemName}
                         </Form.Control.Feedback>
                       </div>
 
                       <div className="mb-3">
-                        <Form.Label htmlFor="deviceModel">
-                          Įrenginio modelis
-                        </Form.Label>
+                        <Form.Label htmlFor="price">Kaina (€)</Form.Label>
                         <Form.Control
-                          type="text"
-                          id="deviceModel"
-                          name="deviceModel"
-                          value={values.deviceModel}
+                          type="number"
+                          step="0.01"
+                          id="price"
+                          name="price"
+                          value={values.price}
                           onChange={handleChange}
-                          isInvalid={!!errors.deviceModel}
-                          isValid={touched.deviceModel && !errors.deviceModel}
-                          tabIndex="3"
-                          readOnly
+                          isInvalid={touched.price && !!errors.price}
+                          isValid={touched.price && !errors.price}
+                          tabIndex="2"
                         />
                         <Form.Control.Feedback type="invalid">
-                          {errors.deviceModel}
+                          {errors.price}
                         </Form.Control.Feedback>
                       </div>
                     </Col>
                   </Row>
-                  <Row>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="deviceSerial">
-                          Įrenginio serijinis numeris
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="deviceSerial"
-                          name="deviceSerial"
-                          value={values.deviceSerial}
-                          onChange={handleChange}
-                          isInvalid={!!errors.deviceSerial}
-                          isValid={touched.deviceSerial && !errors.deviceSerial}
-                          tabIndex="4"
-                          readOnly
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.deviceSerial}
-                        </Form.Control.Feedback>
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label htmlFor="devicePassword">
-                          Slaptažodis
-                        </Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="devicePassword"
-                          name="devicePassword"
-                          value={values.devicePassword}
-                          onChange={handleChange}
-                          isInvalid={!!errors.devicePassword}
-                          isValid={
-                            touched.devicePassword && !errors.devicePassword
-                          }
-                          tabIndex="6"
-                          readOnly
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.devicePassword}
-                        </Form.Control.Feedback>
-                      </div>
-                    </Col>
-                    <Col md={6}>
-                      <div className="mb-3">
-                        <Form.Label htmlFor="failure">Gedimas</Form.Label>
-                        <Form.Control
-                          type="text"
-                          id="failure"
-                          name="failure"
-                          value={values.failure}
-                          onChange={handleChange}
-                          isInvalid={!!errors.failure}
-                          isValid={touched.failure && !errors.failure}
-                          tabIndex="5"
-                          readOnly
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {errors.failure}
-                        </Form.Control.Feedback>
-                      </div>
-
-                      <div className="mb-3">
-                        <Form.Label>Būsena</Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="status"
-                          value={values.status}
-                          onChange={handleChange}
-                          isValid={touched.status && !errors.status}
-                          tabIndex="8"
-                          readOnly
-                        >
-                          <option>Taisoma vietoje</option>
-                          <option>Neišsiųsta</option>
-                          <option>Taisoma kitur</option>
-                          <option>Sutaisyta, pranešta</option>
-                          <option>Atsiskaityta</option>
-                        </Form.Control>
-                      </div>
-                    </Col>
-                  </Row> */}
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group>
-                        <div className="mb-3">
-                          <Form.Label htmlFor="price">Kaina</Form.Label>
-                          <Form.Control
-                            type="text"
-                            id="price"
-                            name="price"
-                            value={values.price}
-                            onChange={handleChange}
-                            isInvalid={!!errors.price}
-                            isValid={touched.price && !errors.price}
-                            tabIndex="9"
-                          />
-                          <Form.Control.Feedback type="invalid">
-                            {errors.price}
-                          </Form.Control.Feedback>
-                        </div>
-                        <div className="mb-3">
-                          <Form.Label htmlFor="price">Uždarbis</Form.Label>
-                          <Form.Control
-                            type="text"
-                            id="profit"
-                            name="profit"
-                            value={values.profit}
-                            onChange={handleChange}
-                            isInvalid={!!errors.profit}
-                            isValid={touched.profit && !errors.profit}
-                            tabIndex="9"
-                          />
-                          <Form.Control.Feedback type="invalid">
-                            {errors.profit}
-                          </Form.Control.Feedback>
-                        </div>
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  {/* <Form.Group controlId="hasCharger">
-                    <div className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        label="Pakrovėjas?"
-                        id="hasCharger"
-                        name="hasCharger"
-                        value={values.hasCharger}
-                        onChange={handleChange}
-                        isValid={touched.hasCharger && !errors.hasCharger}
-                        tabIndex="10"
-                        readOnly
-                      />
-                    </div>
-                  </Form.Group>
-                  <Form.Group controlId="isContacted">
-                    <div className="mb-3">
-                      <Form.Check
-                        type="switch"
-                        label="Susisiekta?"
-                        id="isContacted"
-                        name="isContacted"
-                        value={values.isContacted}
-                        onChange={handleChange}
-                        isValid={touched.isContacted && !errors.isContacted}
-                        tabIndex="11"
-                        readOnly
-                      />
-                    </div>
-                  </Form.Group> */}
-                  <Button variant="primary" type="submit" tabIndex="12">
-                    Patvirtinti
+                  <Button variant="primary" type="submit" tabIndex="3">
+                    Tęsti į mokėjimą
                   </Button>
                 </Form>
               )}
@@ -354,6 +129,305 @@ export default function QuickAdd() {
 
         <Footer />
       </div>
+
+      <Modal
+        className="modal-event"
+        show={isPaymentModalShown}
+        onHide={() => setIsPaymentModalShown(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Mokėjimo informacija</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Formik
+            onSubmit={async (values, { setSubmitting }) => {
+              setIsPaymentLoading(true);
+              const apiBase = import.meta.env.VITE_APP_URL;
+              try {
+                const createRes = await axios.post(
+                  `${apiBase}/api/dashboard/services`,
+                  {
+                    name: "Parduodama prekė",
+                    number: "62222222",
+                    deviceModel: "-",
+                    deviceSerial: "-",
+                    devicePassword: "-",
+                    failure: saleData.itemName,
+                    service: saleData.itemName,
+                    hasCharger: false,
+                    status: "Sutaisyta, pranešta",
+                    isContacted: true,
+                    clientType: values.clientType,
+                    paymentMethod: values.paymentMethod,
+                    paidDate: values.paidDate,
+                    companyName: values.companyName,
+                    companyCode: values.companyCode,
+                    pvmCode: values.pvmCode,
+                    address: values.address,
+                  },
+                  { withCredentials: true }
+                );
+
+                const created = createRes.data;
+                const serviceId = created.id;
+
+                await axios.put(
+                  `${apiBase}/api/dashboard/services/${serviceId}`,
+                  {
+                    works: [
+                      { name: saleData.itemName, price: Number(saleData.price) },
+                    ],
+                  },
+                  { withCredentials: true }
+                );
+
+                const paymentPayload = {
+                  serviceId,
+                  needPVM: values.needPVM,
+                };
+
+                if (values.needPVM) {
+                  paymentPayload.paymentMethod = values.paymentMethod;
+                  paymentPayload.paidDate = values.paidDate;
+                  paymentPayload.clientType = values.clientType;
+                  paymentPayload.clientName = "Parduodama prekė";
+                  paymentPayload.amount = Number(saleData.price);
+                  paymentPayload.serviceName = saleData.itemName;
+                  if (values.clientType === "juridinis") {
+                    paymentPayload.companyName = values.companyName;
+                    paymentPayload.companyCode = values.companyCode;
+                    paymentPayload.pvmCode = values.pvmCode;
+                    paymentPayload.address = values.address;
+                  }
+                }
+
+                const paymentRes = await axios.post(
+                  `${apiBase}/api/v2/payments`,
+                  paymentPayload,
+                  { withCredentials: true }
+                );
+
+                await axios.put(
+                  `${apiBase}/api/dashboard/services/${serviceId}`,
+                  { status: "Atsiskaityta" },
+                  { withCredentials: true }
+                );
+
+                if (values.needPVM && paymentRes.data?.pdfUrl) {
+                  window.open(
+                    `${apiBase}${paymentRes.data.pdfUrl}`,
+                    "_blank"
+                  );
+                }
+
+                setIsPaymentModalShown(false);
+                toast.success("Pardavimas sėkmingai įformintas!");
+                navigate("/services/all");
+              } catch (error) {
+                const msg =
+                  error.response?.data?.error ||
+                  error.response?.data?.message ||
+                  "Nepavyko išsaugoti mokėjimo";
+                toast.error(msg);
+              } finally {
+                setIsPaymentLoading(false);
+                setSubmitting(false);
+              }
+            }}
+            initialValues={{
+              paidDate: new Date().toLocaleDateString("lt-LT"),
+              clientType: "privatus",
+              paymentMethod: "kortele",
+              companyName: "",
+              companyCode: "",
+              pvmCode: "",
+              address: "",
+              needPVM: false,
+            }}
+            enableReinitialize={true}
+          >
+            {({
+              handleSubmit,
+              handleChange,
+              values,
+              touched,
+              errors,
+              setFieldValue,
+            }) => (
+              <Form onSubmit={handleSubmit}>
+                <Row>
+                  <Col md={6}>
+                    <div className="mb-3">
+                      <Form.Label htmlFor="paidDate">Mokėjimo data</Form.Label>
+                      <Form.Control
+                        type="date"
+                        name="paidDate"
+                        placeholder="Paid date"
+                        value={values.paidDate}
+                        onChange={handleChange}
+                        isValid={touched.paidDate && !errors.paidDate}
+                      />
+                      <Form.Control.Feedback type="invalid">
+                        {errors.paidDate}
+                      </Form.Control.Feedback>
+                    </div>
+
+                    <div className="mb-3">
+                      <Form.Label htmlFor="clientType">Kliento tipas</Form.Label>
+                      <Form.Select
+                        id="clientType"
+                        name="clientType"
+                        value={values.clientType}
+                        onChange={(e) => {
+                          const newClientType = e.target.value;
+                          setFieldValue("clientType", newClientType);
+                          const newNeedPVM =
+                            newClientType === "juridinis" ||
+                            values.paymentMethod === "grynais";
+                          setFieldValue("needPVM", newNeedPVM);
+                        }}
+                      >
+                        <option value="privatus">Privatus</option>
+                        <option value="juridinis">Juridinis</option>
+                      </Form.Select>
+                      <Form.Control.Feedback type="invalid">
+                        {errors.clientType}
+                      </Form.Control.Feedback>
+                    </div>
+                  </Col>
+
+                  <Col md={6}>
+                    <div className="mb-3">
+                      <Form.Label htmlFor="paymentMethod">
+                        Mokėjimo būdas
+                      </Form.Label>
+                      <Form.Select
+                        id="paymentMethod"
+                        name="paymentMethod"
+                        value={values.paymentMethod}
+                        onChange={(e) => {
+                          const newPaymentMethod = e.target.value;
+                          setFieldValue("paymentMethod", newPaymentMethod);
+                          const newNeedPVM =
+                            values.clientType === "juridinis" ||
+                            newPaymentMethod === "grynais";
+                          setFieldValue("needPVM", newNeedPVM);
+                        }}
+                      >
+                        <option value="kortele">Kortelė</option>
+                        <option value="grynais">Grynais</option>
+                      </Form.Select>
+                      <Form.Control.Feedback type="invalid">
+                        {errors.paymentMethod}
+                      </Form.Control.Feedback>
+                    </div>
+
+                    <div className="mb-3">
+                      <Form.Label>Paslauga</Form.Label>
+                      <Form.Control type="text" value={saleData.itemName} readOnly />
+                    </div>
+                  </Col>
+                </Row>
+
+                {values.clientType !== "privatus" && (
+                  <Row>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Form.Label htmlFor="companyName">
+                          Įmonės pavadinimas
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          id="companyName"
+                          name="companyName"
+                          value={values.companyName}
+                          onChange={handleChange}
+                          isInvalid={!!errors.companyName}
+                          isValid={touched.companyName && !errors.companyName}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.companyName}
+                        </Form.Control.Feedback>
+                      </div>
+
+                      <div className="mb-3">
+                        <Form.Label htmlFor="address">Adresas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          id="address"
+                          name="address"
+                          value={values.address}
+                          onChange={handleChange}
+                          isInvalid={!!errors.address}
+                          isValid={touched.address && !errors.address}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.address}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="mb-3">
+                        <Form.Label htmlFor="companyCode">Įmonės kodas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          id="companyCode"
+                          name="companyCode"
+                          value={values.companyCode}
+                          onChange={handleChange}
+                          isInvalid={!!errors.companyCode}
+                          isValid={touched.companyCode && !errors.companyCode}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.companyCode}
+                        </Form.Control.Feedback>
+                      </div>
+
+                      <div className="mb-3">
+                        <Form.Label htmlFor="pvmCode">PVM kodas</Form.Label>
+                        <Form.Control
+                          type="text"
+                          id="pvmCode"
+                          name="pvmCode"
+                          value={values.pvmCode}
+                          onChange={handleChange}
+                          isInvalid={!!errors.pvmCode}
+                          isValid={touched.pvmCode && !errors.pvmCode}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          {errors.pvmCode}
+                        </Form.Control.Feedback>
+                      </div>
+                    </Col>
+                  </Row>
+                )}
+
+                <Form.Group controlId="needPVM">
+                  <div className="mb-3">
+                    <Form.Check
+                      type="switch"
+                      label="Reikia PVM SF?"
+                      id="needPVM"
+                      name="needPVM"
+                      checked={values.needPVM}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </Form.Group>
+
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={isPaymentLoading}
+                >
+                  {isPaymentLoading ? "Saugoma..." : "Išsaugoti ir spausdinti"}
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </Modal.Body>
+      </Modal>
     </React.Fragment>
   );
 }

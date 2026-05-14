@@ -4,14 +4,15 @@ import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
 import { Link } from "react-router-dom";
 import Chat from "../apps/Chat";
-import { Card, Table, Pagination, Offcanvas, Button, Form, Row, Col, Accordion, Badge } from "react-bootstrap";
+import { Card, Table, Pagination, Offcanvas, Button, Form, Row, Col, Accordion, Badge, Modal } from "react-bootstrap";
 import { PDFViewer } from "@react-pdf/renderer";
 import PaymentActDocument from "../documentTemplates/PaymentAct";
 import { useAuth } from "../AuthContext";
 
-import { FaEdit, FaTrash, FaPhone, FaChargingStation, FaSearch } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPhone, FaChargingStation, FaSearch, FaCommentDots } from "react-icons/fa";
 import axios from "axios";
 import io from "socket.io-client";
+import { Toaster, toast } from "react-hot-toast";
 
 const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
@@ -42,6 +43,39 @@ export default function Services() {
   const [searchServiceId, setSearchServiceId] = useState("");
 
   const [showChat, setShowChat] = useState(false);
+
+  const [messageTarget, setMessageTarget] = useState(null);
+  const isMessageModalShown = messageTarget !== null;
+
+  const sendAccept = async (serviceId, phoneNumber) => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_APP_URL}/api/send-msg/accept`,
+        { phoneNumber, serviceId },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      if (error.response && error.response.data) {
+        throw new Error(error.response.data.message || "Unknown error occurred");
+      }
+      throw new Error("Network error or server is unreachable");
+    }
+  };
+
+  const sendPickup = async (serviceId, phoneNumber) => {
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_APP_URL}/api/send-msg/pick-up`,
+        { phoneNumber, serviceId },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      if (error.response && error.response.data) {
+        throw new Error(error.response.data.message || "Unknown error occurred");
+      }
+      throw new Error("Network error or server is unreachable");
+    }
+  };
 
   const switchSkin = (skin) => {
     if (skin === "dark") {
@@ -290,6 +324,13 @@ export default function Services() {
                           <FaEdit />
                         </Link>
                         <button
+                          className="btn btn-sm btn-outline-success"
+                          onClick={() => setMessageTarget({ id: item.id, number: item.number })}
+                          title="Siųsti žinutę"
+                        >
+                          <FaCommentDots />
+                        </button>
+                        <button
                           className="btn btn-sm btn-outline-danger"
                           onClick={() => handleDelete(item.id)}
                         >
@@ -333,6 +374,65 @@ export default function Services() {
 
         <Footer />
       </div>
+
+      <Toaster />
+
+      <Modal
+        className="modal-event"
+        show={isMessageModalShown}
+        onHide={() => setMessageTarget(null)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Informuoti klientą apie</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Row>
+            <Col>
+              <Button
+                onClick={() => {
+                  if (!messageTarget) return;
+                  toast.promise(
+                    sendAccept(messageTarget.id, messageTarget.number),
+                    {
+                      loading: "Siunčiama žinutė...",
+                      success: <b>Žinutė sėkmingai išsiųsta!</b>,
+                      error: (error) => <b>{error.message}</b>,
+                    }
+                  );
+                }}
+                variant="success"
+                type="button"
+                className="mx-2"
+              >
+                Sėkmingai užregistruotas
+              </Button>
+            </Col>
+          </Row>
+          <Row className="my-2">
+            <Col>
+              <Button
+                onClick={() => {
+                  if (!messageTarget) return;
+                  toast.promise(
+                    sendPickup(messageTarget.id, messageTarget.number),
+                    {
+                      loading: "Siunčiama žinutė...",
+                      success: <b>Žinutė sėkmingai išsiųsta!</b>,
+                      error: (error) => <b>{error.message}</b>,
+                    }
+                  );
+                }}
+                variant="danger"
+                type="button"
+                className="mx-2"
+              >
+                Galite atsiimti įrenginį
+              </Button>
+            </Col>
+          </Row>
+        </Modal.Body>
+      </Modal>
 
       {paymentAct && (
         <PDFViewer className="payment-act d-none">

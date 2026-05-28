@@ -77,7 +77,7 @@ async function checkPromotionDedupe(phoneE164) {
 }
 
 // Send Winter Promotion SMS with dynamic links (POST body or query)
-router.post("/winter-promotion", async (req, res) => {
+router.post("/winter-promotion", verify, async (req, res) => {
   try {
     const phoneNumber =
       (req.body && req.body.phoneNumber) ||
@@ -151,7 +151,7 @@ router.post("/winter-promotion", async (req, res) => {
 });
 
 // Batch send: pull eligible phones from Services paid >6 months ago, dedupe, send up to `limit`.
-router.post("/winter-promotion/batch", async (req, res) => {
+router.post("/winter-promotion/batch", verify, async (req, res) => {
   try {
     const limitRaw = (req.body && req.body.limit) ?? 70;
     const limit = Math.min(200, Math.max(1, parseInt(limitRaw, 10) || 70));
@@ -280,76 +280,82 @@ router.post("/winter-promotion/batch", async (req, res) => {
 });
 
 // Alternate GET endpoint with phone number as a path param (exactly 8 digits)
-router.get("/winter-promotion/:phoneNumber(\\d{8})", async (req, res) => {
-  try {
-    const phoneParam = req.params.phoneNumber;
-    if (!phoneParam) {
-      return res.status(400).json({ error: "phoneNumber is required" });
-    }
-    const phoneE164 = normalizeLtPhone(phoneParam);
-    if (!phoneE164) {
-      return res.status(400).json({
-        error: "Invalid phone format. Expected 8 digits starting with 6.",
-      });
-    }
-
-    const dedupe = await checkPromotionDedupe(phoneE164);
-    if (!dedupe.ok) {
-      return res.status(dedupe.status).json(dedupe.body);
-    }
-
-    const tokenBook = generateToken(16);
-    const tokenStop = generateToken(16);
-    const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
-    const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
-
-    const messageBody = `Sveiki! Primename apie vasaros PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos keitimas su 50% nuolaida. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
-
-    let msg;
+router.get(
+  "/winter-promotion/:phoneNumber(\\d{8})",
+  verify,
+  async (req, res) => {
     try {
-      msg = await client.messages.create({
-        body: messageBody,
-        from: "IT112",
-        to: phoneE164,
-        shortenUrls: true,
-      });
-    } catch (twilioError) {
-      console.error("Twilio error:", twilioError);
-      return res.status(502).json({
-        error: "Upstream SMS provider error",
-        details: twilioError?.message || "unknown",
-      });
-    }
+      const phoneParam = req.params.phoneNumber;
+      if (!phoneParam) {
+        return res.status(400).json({ error: "phoneNumber is required" });
+      }
+      const phoneE164 = normalizeLtPhone(phoneParam);
+      if (!phoneE164) {
+        return res.status(400).json({
+          error: "Invalid phone format. Expected 8 digits starting with 6.",
+        });
+      }
 
-    const promo = new Promotion({
-      phoneRaw: String(phoneParam).trim(),
-      phoneE164,
-      message: messageBody,
-      messageSid: msg.sid || null,
-      tokenBook,
-      tokenStop,
-      bookUrl,
-      stopUrl,
-      status: "sent",
-      sentAt: new Date(),
-    });
-    await promo.save();
+      const dedupe = await checkPromotionDedupe(phoneE164);
+      if (!dedupe.ok) {
+        return res.status(dedupe.status).json(dedupe.body);
+      }
 
-    res.status(200).json({
-      success: true,
-      message: "Promotion sent",
-      sid: msg.sid || null,
-      bookUrl,
-      stopUrl,
-    });
-  } catch (error) {
-    console.error("Error sending winter promotion (GET):", error);
-    if (error.code === 11000) {
-      return res.status(409).json({ error: "Token collision. Please retry." });
+      const tokenBook = generateToken(16);
+      const tokenStop = generateToken(16);
+      const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
+      const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
+
+      const messageBody = `Sveiki! Primename apie vasaros PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos keitimas su 50% nuolaida. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
+
+      let msg;
+      try {
+        msg = await client.messages.create({
+          body: messageBody,
+          from: "IT112",
+          to: phoneE164,
+          shortenUrls: true,
+        });
+      } catch (twilioError) {
+        console.error("Twilio error:", twilioError);
+        return res.status(502).json({
+          error: "Upstream SMS provider error",
+          details: twilioError?.message || "unknown",
+        });
+      }
+
+      const promo = new Promotion({
+        phoneRaw: String(phoneParam).trim(),
+        phoneE164,
+        message: messageBody,
+        messageSid: msg.sid || null,
+        tokenBook,
+        tokenStop,
+        bookUrl,
+        stopUrl,
+        status: "sent",
+        sentAt: new Date(),
+      });
+      await promo.save();
+
+      res.status(200).json({
+        success: true,
+        message: "Promotion sent",
+        sid: msg.sid || null,
+        bookUrl,
+        stopUrl,
+      });
+    } catch (error) {
+      console.error("Error sending winter promotion (GET):", error);
+      if (error.code === 11000) {
+        return res
+          .status(409)
+          .json({ error: "Token collision. Please retry." });
+      }
+      res.status(500).json({ error: "Failed to send winter promotion." });
     }
-    res.status(500).json({ error: "Failed to send winter promotion." });
-  }
-});
+  },
+);
 
 // Verify booking token (JSON API for WordPress page)
 router.get("/winter-promotion/book/verify", async (req, res) => {
@@ -650,7 +656,7 @@ router.post("/accept", verify, async (req, res) => {
   }
 });
 
-router.post("/pick-up", async (req, res) => {
+router.post("/pick-up", verify, async (req, res) => {
   try {
     const { serviceId, phoneNumber } = req.body;
 

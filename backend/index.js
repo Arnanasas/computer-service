@@ -10,6 +10,7 @@ const { rateLimit } = require("express-rate-limit");
 //IMPORT ROUTES
 const authRoute = require("./routes/auth/auth");
 const authDashboard = require("./routes/auth/authDashboard");
+const plannerRoute = require("./routes/auth/planner");
 const messageRoute = require("./routes/message");
 const signatureRoute = require("./routes/sign");
 const paymentsV2Route = require("./routes/v2/payments");
@@ -36,7 +37,12 @@ const app = express();
 app.use(
   express.json(),
   cors({
-    origin: ["https://admin.it112.lt", "https://it112.lt", "*"], // Replace with your frontend's URL
+    origin: [
+      "https://admin.it112.lt",
+      "https://it112.lt",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
     credentials: true, // Allow credentials (cookies)
   })
 );
@@ -52,6 +58,7 @@ const limiter = rateLimit({
 app.use(cookieParser());
 app.use("/api/users", authRoute);
 app.use("/api/dashboard", authDashboard);
+app.use("/api/dashboard/planner", plannerRoute);
 app.use("/api/send-msg", messageRoute);
 app.use("/api/signature", signatureRoute);
 app.use("/api/v2/payments", paymentsV2Route);

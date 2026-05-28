@@ -48,6 +48,11 @@ const serviceSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    plannedDate: {
+      type: Date,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: { createdAt: "createdAt", updatedAt: "editedAt" },

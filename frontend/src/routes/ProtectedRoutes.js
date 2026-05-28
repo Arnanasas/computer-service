@@ -13,6 +13,7 @@ import Works from "../dashboard/Works";
 import Inventory from "../dashboard/Inventory";
 import AddInventory from "../dashboard/AddInventory";
 import CaptureSignature from "../dashboard/CaptureSignature";
+import Planner from "../dashboard/Planner";
 
 const protectedRoutes = [
   { path: "/", element: <Services /> },
@@ -26,6 +27,7 @@ const protectedRoutes = [
   { path: "/inventory/add", element: <AddInventory /> },
   { path: "/capture-signature", element: <CaptureSignature /> },
   { path: "/works", element: <Works /> },
+  { path: "/planner", element: <Planner /> },
 ];
 
 export default protectedRoutes;

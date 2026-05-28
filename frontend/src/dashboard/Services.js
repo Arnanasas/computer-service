@@ -14,16 +14,9 @@ import axios from "axios";
 import io from "socket.io-client";
 import { Toaster, toast } from "react-hot-toast";
 
-const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
+import { statusConfig } from "../data/statusConfig";
 
-const statusConfig = {
-  "Taisoma vietoje": { bg: "primary", label: "Taisoma vietoje" },
-  "Neišsiųsta":      { bg: "warning", label: "Neišsiųsta" },
-  "Taisoma kitur":   { bg: "info",    label: "Taisoma kitur" },
-  "Sutaisyta, pranešta": { bg: "success", label: "Sutaisyta, pranešta" },
-  "Atsiskaityta":    { bg: "dark",    label: "Atsiskaityta" },
-  "jb":              { bg: "secondary", label: "JB" },
-};
+const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
 export default function Services() {
   const { filter = "all" } = useParams();

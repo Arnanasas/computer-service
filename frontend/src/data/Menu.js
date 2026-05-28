@@ -24,6 +24,11 @@ const dashboardMenu = [
     link: "/services/waiting",
     icon: "ri-number-4",
   },
+  {
+    label: "Planuotojas",
+    link: "/planner",
+    icon: "ri-calendar-2-line",
+  },
 ];
 
 const applicationsMenu = [

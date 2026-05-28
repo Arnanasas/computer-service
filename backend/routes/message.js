@@ -102,7 +102,7 @@ router.post("/winter-promotion", async (req, res) => {
     const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
     const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
 
-    const messageBody = `Sveiki! Primename apie vasaros PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos keitimas su 50% nuolaida. Vietų skaičius ribotas. Registracija: ${bookUrl}`;
+    const messageBody = `Sveiki! 50% nuolaida PC profilaktikai: dulkių valymas, aušinimo patikra, termopastos keitimas. Vietų skaičius ribotas. Registracija: ${bookUrl}`;
 
     let msg;
     try {
@@ -150,6 +150,135 @@ router.post("/winter-promotion", async (req, res) => {
   }
 });
 
+// Batch send: pull eligible phones from Services paid >6 months ago, dedupe, send up to `limit`.
+router.post("/winter-promotion/batch", async (req, res) => {
+  try {
+    const limitRaw = (req.body && req.body.limit) ?? 70;
+    const limit = Math.min(200, Math.max(1, parseInt(limitRaw, 10) || 70));
+    const dryRun = Boolean(req.body && req.body.dryRun);
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // 1) Distinct 8-digit LT mobile numbers from services paid >6 months ago.
+    const rawNumbers = await Service.distinct("number", {
+      paidDate: { $exists: true, $ne: null, $lte: sixMonthsAgo },
+      isDeleted: { $ne: true },
+    });
+    const localRegex = /^6\d{7}$/;
+    const candidates = rawNumbers
+      .map((n) => (typeof n === "string" ? n.trim() : ""))
+      .filter((n) => localRegex.test(n));
+
+    if (candidates.length === 0) {
+      return res
+        .status(200)
+        .json({ success: true, eligible: 0, sent: 0, results: [] });
+    }
+
+    // 2) Build the set of E.164 numbers we must NOT send to:
+    //    - anyone previously opted out (status: stopped)
+    //    - anyone messaged within the cooldown window
+    const candidateE164 = candidates.map((n) => `+370${n}`);
+    const cooldownCutoff = new Date(
+      Date.now() - RESEND_COOLDOWN_DAYS * 86400000,
+    );
+    const blocked = await Promotion.find({
+      phoneE164: { $in: candidateE164 },
+      $or: [{ status: "stopped" }, { sentAt: { $gte: cooldownCutoff } }],
+    })
+      .select("phoneE164")
+      .lean();
+    const blockedSet = new Set(blocked.map((p) => p.phoneE164));
+
+    const eligible = candidates.filter((n) => !blockedSet.has(`+370${n}`));
+    const toSend = eligible.slice(0, limit);
+
+    if (dryRun) {
+      return res.status(200).json({
+        success: true,
+        dryRun: true,
+        candidates: candidates.length,
+        blocked: blockedSet.size,
+        eligible: eligible.length,
+        wouldSend: toSend.length,
+        sample: toSend.slice(0, 10),
+      });
+    }
+
+    // 3) Send sequentially with a small throttle. Each iteration re-checks dedupe
+    //    in case a concurrent run sent to the same number.
+    const results = [];
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const number of toSend) {
+      const phoneE164 = `+370${number}`;
+      try {
+        const dedupe = await checkPromotionDedupe(phoneE164);
+        if (!dedupe.ok) {
+          skipped++;
+          results.push({ number, status: "skipped", reason: dedupe.body.code });
+          continue;
+        }
+
+        const tokenBook = generateToken(16);
+        const tokenStop = generateToken(16);
+        const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
+        const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
+        const messageBody = `Sveiki! 50% nuolaida PC profilaktikai: dulkių valymas, aušinimo patikra, termopastos keitimas. Vietų skaičius ribotas. Registracija: ${bookUrl}`;
+
+        const msg = await client.messages.create({
+          body: messageBody,
+          from: "IT112",
+          to: phoneE164,
+          shortenUrls: true,
+        });
+
+        await new Promotion({
+          phoneRaw: number,
+          phoneE164,
+          message: messageBody,
+          messageSid: msg.sid || null,
+          tokenBook,
+          tokenStop,
+          bookUrl,
+          stopUrl,
+          status: "sent",
+          sentAt: new Date(),
+        }).save();
+
+        sent++;
+        results.push({ number, status: "sent", sid: msg.sid || null });
+      } catch (err) {
+        failed++;
+        console.error(`Batch send failed for ${number}:`, err?.message || err);
+        results.push({
+          number,
+          status: "failed",
+          error: err?.message || "unknown",
+        });
+      }
+      // Throttle: 1 req/sec to stay polite with Twilio and the recipient network.
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+
+    res.status(200).json({
+      success: true,
+      candidates: candidates.length,
+      eligible: eligible.length,
+      attempted: toSend.length,
+      sent,
+      skipped,
+      failed,
+      results,
+    });
+  } catch (error) {
+    console.error("Batch winter promotion error:", error);
+    res.status(500).json({ error: "Failed to run batch winter promotion." });
+  }
+});
+
 // Alternate GET endpoint with phone number as a path param (exactly 8 digits)
 router.get("/winter-promotion/:phoneNumber(\\d{8})", async (req, res) => {
   try {
@@ -174,7 +303,7 @@ router.get("/winter-promotion/:phoneNumber(\\d{8})", async (req, res) => {
     const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
     const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
 
-    const messageBody = `Sveiki! Primename apie žiemos PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos būklė. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
+    const messageBody = `Sveiki! Primename apie vasaros PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos keitimas su 50% nuolaida. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
 
     let msg;
     try {

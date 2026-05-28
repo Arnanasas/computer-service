@@ -18,7 +18,9 @@ const { createComment } = require("../services/commentService");
 
 function buildBaseUrl(req) {
   const forwardedProto = req.headers["x-forwarded-proto"];
-  const protocol = forwardedProto ? forwardedProto.split(",")[0].trim() : req.protocol;
+  const protocol = forwardedProto
+    ? forwardedProto.split(",")[0].trim()
+    : req.protocol;
   const host = req.get("host");
   return `${protocol}://${host}`;
 }
@@ -37,6 +39,43 @@ function generateToken(bytes = 16) {
   return crypto.randomBytes(bytes).toString("hex");
 }
 
+const RESEND_COOLDOWN_DAYS = 90;
+
+async function checkPromotionDedupe(phoneE164) {
+  const stopped = await Promotion.findOne({ phoneE164, status: "stopped" })
+    .select("_id stoppedAt")
+    .lean();
+  if (stopped) {
+    return {
+      ok: false,
+      status: 409,
+      body: { error: "Recipient has opted out", code: "opted_out" },
+    };
+  }
+
+  const cutoff = new Date(Date.now() - RESEND_COOLDOWN_DAYS * 86400000);
+  const recent = await Promotion.findOne({
+    phoneE164,
+    sentAt: { $gte: cutoff },
+  })
+    .select("_id sentAt status")
+    .lean();
+  if (recent) {
+    return {
+      ok: false,
+      status: 409,
+      body: {
+        error: `Promotion already sent to this number within the last ${RESEND_COOLDOWN_DAYS} days`,
+        code: "duplicate",
+        lastSentAt: recent.sentAt,
+        lastStatus: recent.status,
+      },
+    };
+  }
+
+  return { ok: true };
+}
+
 // Send Winter Promotion SMS with dynamic links (POST body or query)
 router.post("/winter-promotion", async (req, res) => {
   try {
@@ -48,18 +87,22 @@ router.post("/winter-promotion", async (req, res) => {
     }
     const phoneE164 = normalizeLtPhone(phoneNumber);
     if (!phoneE164) {
-      return res.status(400).json({ error: "Invalid phone format. Expected 8 digits starting with 6." });
+      return res.status(400).json({
+        error: "Invalid phone format. Expected 8 digits starting with 6.",
+      });
     }
 
-    const base = buildBaseUrl(req); // e.g. https://api.it112.lt
+    const dedupe = await checkPromotionDedupe(phoneE164);
+    if (!dedupe.ok) {
+      return res.status(dedupe.status).json(dedupe.body);
+    }
+
     const tokenBook = generateToken(16);
     const tokenStop = generateToken(16);
-    // Booking now points to WordPress page with the token
-    const bookUrl = `https://it112.lt/ziemos-akcija?t=${tokenBook}`;
-    // Stop now also points to the same WordPress page (stop flow)
-    const stopUrl = `https://it112.lt/ziemos-akcija?stop=${tokenStop}`;
+    const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
+    const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
 
-    const messageBody = `Sveiki! Primename apie žiemos PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos būklė. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
+    const messageBody = `Sveiki! Primename apie vasaros PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos keitimas su 50% nuolaida. Vietų skaičius ribotas. Registracija: ${bookUrl}`;
 
     let msg;
     try {
@@ -116,16 +159,20 @@ router.get("/winter-promotion/:phoneNumber(\\d{8})", async (req, res) => {
     }
     const phoneE164 = normalizeLtPhone(phoneParam);
     if (!phoneE164) {
-      return res.status(400).json({ error: "Invalid phone format. Expected 8 digits starting with 6." });
+      return res.status(400).json({
+        error: "Invalid phone format. Expected 8 digits starting with 6.",
+      });
     }
 
-    const base = buildBaseUrl(req);
+    const dedupe = await checkPromotionDedupe(phoneE164);
+    if (!dedupe.ok) {
+      return res.status(dedupe.status).json(dedupe.body);
+    }
+
     const tokenBook = generateToken(16);
     const tokenStop = generateToken(16);
-    // Booking now points to WordPress page with the token
-    const bookUrl = `https://it112.lt/ziemos-akcija?t=${tokenBook}`;
-    // Stop now also points to the same WordPress page (stop flow)
-    const stopUrl = `https://it112.lt/ziemos-akcija?stop=${tokenStop}`;
+    const bookUrl = `https://it112.lt/vasaros-akcija?t=${tokenBook}`;
+    const stopUrl = `https://it112.lt/vasaros-akcija?stop=${tokenStop}`;
 
     const messageBody = `Sveiki! Primename apie žiemos PC profilaktiką: dulkių valymas, aušinimo patikra, termopastos būklė. Vietų skaičius ribotas. Registracija: ${bookUrl} Atsisakyti: ${stopUrl}`;
 
@@ -183,7 +230,7 @@ router.get("/winter-promotion/book/verify", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing token" });
     }
     const promo = await Promotion.findOne({ tokenBook: token.trim() }).select(
-      "status bookedAt stoppedAt createdAt"
+      "status bookedAt stoppedAt createdAt",
     );
     if (!promo) {
       return res.status(404).json({ ok: false, error: "Invalid token" });
@@ -208,7 +255,8 @@ router.get("/winter-promotion/book/verify", async (req, res) => {
 // Confirm booking token (JSON API for WordPress page)
 router.post("/winter-promotion/book/confirm", async (req, res) => {
   try {
-    const token = (req.body && req.body.token) || (req.query && req.query.token);
+    const token =
+      (req.body && req.body.token) || (req.query && req.query.token);
     if (!token || typeof token !== "string" || token.trim().length === 0) {
       return res.status(400).json({ ok: false, error: "Missing token" });
     }
@@ -244,7 +292,7 @@ router.get("/winter-promotion/stop/verify", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing token" });
     }
     const promo = await Promotion.findOne({ tokenStop: token.trim() }).select(
-      "status bookedAt stoppedAt createdAt"
+      "status bookedAt stoppedAt createdAt",
     );
     if (!promo) {
       return res.status(404).json({ ok: false, error: "Invalid token" });
@@ -267,7 +315,8 @@ router.get("/winter-promotion/stop/verify", async (req, res) => {
 // Confirm stop token (JSON API for WordPress page)
 router.post("/winter-promotion/stop/confirm", async (req, res) => {
   try {
-    const token = (req.body && req.body.token) || (req.query && req.query.token);
+    const token =
+      (req.body && req.body.token) || (req.query && req.query.token);
     if (!token || typeof token !== "string" || token.trim().length === 0) {
       return res.status(400).json({ ok: false, error: "Missing token" });
     }
@@ -308,10 +357,10 @@ router.get("/winter-promotion/book/:token", async (req, res) => {
       promo.lastUserAgent = ua;
       await promo.save();
     }
-    res.redirect(302, "https://it112.lt/ziemos-akcija");
+    res.redirect(302, "https://it112.lt/vasaros-akcija");
   } catch (error) {
     console.error("Book URL error:", error);
-    res.redirect(302, "https://it112.lt/ziemos-akcija");
+    res.redirect(302, "https://it112.lt/vasaros-akcija");
   }
 });
 
@@ -355,7 +404,7 @@ router.get("/winter-promotion/records", async (req, res) => {
         .skip((pageNumber - 1) * pageSize)
         .limit(pageSize)
         .select(
-          "phoneRaw phoneE164 status sentAt bookedAt stoppedAt messageSid createdAt updatedAt"
+          "phoneRaw phoneE164 status sentAt bookedAt stoppedAt messageSid createdAt updatedAt",
         ),
       Promotion.countDocuments(query),
     ]);
@@ -499,7 +548,7 @@ router.post("/pick-up", async (req, res) => {
 
     // Construct the phone number with a plus sign (assuming country code is needed)
     const formattedPhoneNumber = `+370${phoneNumber}`;
-    const bodyMessage = `Sveiki, Jūsų įrenginys (Nr. ${serviceId}) yra paruoštas atsiėmimui. Mokėtina suma – ${price} €. Atsiėmimas: Kalvarijų g. 2, Vilnius, I–V 9:00–18:00.`
+    const bodyMessage = `Sveiki, Jūsų įrenginys (Nr. ${serviceId}) yra paruoštas atsiėmimui. Mokėtina suma – ${price} €. Atsiėmimas: Kalvarijų g. 2, Vilnius, I–V 9:00–18:00.`;
 
     // Send message using Twilio
     const messageResponse = await client.messages.create({

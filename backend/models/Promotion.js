@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const promotionSchema = new mongoose.Schema(
   {
     phoneRaw: { type: String, required: true },
-    phoneE164: { type: String, required: true },
+    phoneE164: { type: String, required: true, index: true },
     message: { type: String, required: true },
     messageSid: { type: String, default: null },
     messageStatus: { type: String, default: null },

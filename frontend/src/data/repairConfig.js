@@ -13,9 +13,6 @@ export const REPAIR_PARTNERS = [
 export const getRepairPartner = (value) =>
   REPAIR_PARTNERS.find((p) => p.value === value) || null;
 
-export const getRepairPartnerLabel = (value) =>
-  getRepairPartner(value)?.label || value;
-
 // Dates are saved from <input type="date"> as UTC midnight, so the UTC
 // calendar day is the day that was picked.
 export const toDateInputValue = (date) => {

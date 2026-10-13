@@ -15,7 +15,7 @@ import io from "socket.io-client";
 import { Toaster, toast } from "react-hot-toast";
 
 import { statusConfig } from "../data/statusConfig";
-import { getRepairPartner, getRepairPartnerLabel, getRepairDueState, toDateInputValue } from "../data/repairConfig";
+import { getRepairPartner, getRepairDueState, toDateInputValue } from "../data/repairConfig";
 
 const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
@@ -164,12 +164,9 @@ export default function Services() {
     }, 600);
   };
 
-  // For "Taisoma kitur" the partner chip replaces the generic status chip
-  const getChipPartner = (item) =>
-    item.status === "Taisoma kitur" ? getRepairPartner(item.repairPartner) : null;
-
+  // When a repair partner is set, its chip replaces the status chip (status stays in the tooltip)
   const getStatusBadge = (item) => {
-    const partner = getChipPartner(item);
+    const partner = getRepairPartner(item.repairPartner);
     if (partner) {
       return (
         <Badge
@@ -187,8 +184,7 @@ export default function Services() {
   };
 
   const renderRepairInfo = (item) => {
-    const showPartner = Boolean(item.repairPartner) && !getChipPartner(item);
-    if (!showPartner && !item.repairExpectedDate) return null;
+    if (!item.repairExpectedDate) return null;
 
     const due = REPAIR_DUE_IGNORED_STATUSES.includes(item.status)
       ? null
@@ -204,22 +200,14 @@ export default function Services() {
 
     return (
       <div className="small mt-1 text-nowrap">
-        {showPartner && (
-          <span className="me-1">
-            <i className="ri-truck-line me-1 text-muted"></i>
-            {getRepairPartnerLabel(item.repairPartner)}
-          </span>
-        )}
-        {item.repairExpectedDate && (
-          <span className={dateClass} title={dateTitle}>
-            {due === "overdue" ? (
-              <i className="ri-error-warning-line me-1"></i>
-            ) : (
-              <i className="ri-time-line me-1"></i>
-            )}
-            {toDateInputValue(item.repairExpectedDate)}
-          </span>
-        )}
+        <span className={dateClass} title={dateTitle}>
+          {due === "overdue" ? (
+            <i className="ri-error-warning-line me-1"></i>
+          ) : (
+            <i className="ri-time-line me-1"></i>
+          )}
+          {toDateInputValue(item.repairExpectedDate)}
+        </span>
       </div>
     );
   };

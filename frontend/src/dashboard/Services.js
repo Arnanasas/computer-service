@@ -15,7 +15,7 @@ import io from "socket.io-client";
 import { Toaster, toast } from "react-hot-toast";
 
 import { statusConfig } from "../data/statusConfig";
-import { getRepairPartnerLabel, getRepairDueState, toDateInputValue } from "../data/repairConfig";
+import { getRepairPartner, getRepairPartnerLabel, getRepairDueState, toDateInputValue } from "../data/repairConfig";
 
 const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
 
@@ -164,13 +164,31 @@ export default function Services() {
     }, 600);
   };
 
-  const getStatusBadge = (status) => {
-    const config = statusConfig[status] || { bg: "secondary", label: status || "—" };
+  // For "Taisoma kitur" the partner chip replaces the generic status chip
+  const getChipPartner = (item) =>
+    item.status === "Taisoma kitur" ? getRepairPartner(item.repairPartner) : null;
+
+  const getStatusBadge = (item) => {
+    const partner = getChipPartner(item);
+    if (partner) {
+      return (
+        <Badge
+          bg=""
+          className="px-2 py-1"
+          style={{ backgroundColor: partner.hex }}
+          title={`${item.status} – ${partner.label}`}
+        >
+          {partner.label}
+        </Badge>
+      );
+    }
+    const config = statusConfig[item.status] || { bg: "secondary", label: item.status || "—" };
     return <Badge bg={config.bg} className="px-2 py-1">{config.label}</Badge>;
   };
 
   const renderRepairInfo = (item) => {
-    if (!item.repairPartner && !item.repairExpectedDate) return null;
+    const showPartner = Boolean(item.repairPartner) && !getChipPartner(item);
+    if (!showPartner && !item.repairExpectedDate) return null;
 
     const due = REPAIR_DUE_IGNORED_STATUSES.includes(item.status)
       ? null
@@ -186,10 +204,14 @@ export default function Services() {
 
     return (
       <div className="small mt-1 text-nowrap">
-        <i className="ri-truck-line me-1 text-muted"></i>
-        {item.repairPartner && <span>{getRepairPartnerLabel(item.repairPartner)}</span>}
+        {showPartner && (
+          <span className="me-1">
+            <i className="ri-truck-line me-1 text-muted"></i>
+            {getRepairPartnerLabel(item.repairPartner)}
+          </span>
+        )}
         {item.repairExpectedDate && (
-          <span className={`ms-1 ${dateClass}`} title={dateTitle}>
+          <span className={dateClass} title={dateTitle}>
             {due === "overdue" ? (
               <i className="ri-error-warning-line me-1"></i>
             ) : (
@@ -321,7 +343,7 @@ export default function Services() {
                           onClick={() => printPaymentAct(i)}
                           style={{ cursor: "pointer" }}
                         >
-                          {getStatusBadge(item.status)}
+                          {getStatusBadge(item)}
                           {item.paymentId && (
                             <Badge bg="success" className="px-2 py-1">
                               {item.paymentId}
@@ -330,7 +352,7 @@ export default function Services() {
                         </span>
                       ) : (
                         <>
-                          {getStatusBadge(item.status)}
+                          {getStatusBadge(item)}
                           {item.paymentId && (
                             <Badge bg="success" className="px-2 py-1">Sumokėta</Badge>
                           )}

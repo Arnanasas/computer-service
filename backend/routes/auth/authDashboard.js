@@ -366,6 +366,22 @@ router.put("/services/:id", verify, async (req, res) => {
       });
     }
 
+    // Optional repair fields: empty values clear them, invalid values are rejected
+    if ("repairPartner" in updateData) {
+      const partner = updateData.repairPartner || null;
+      if (partner !== null && !Service.schema.path("repairPartner").enumValues.includes(partner)) {
+        return res.status(400).json({ error: "Invalid repairPartner" });
+      }
+      updateData.repairPartner = partner;
+    }
+    if ("repairExpectedDate" in updateData) {
+      const expected = updateData.repairExpectedDate ? new Date(updateData.repairExpectedDate) : null;
+      if (expected && Number.isNaN(expected.getTime())) {
+        return res.status(400).json({ error: "Invalid repairExpectedDate" });
+      }
+      updateData.repairExpectedDate = expected;
+    }
+
     // Apply any other updates
     if (updateData && Object.keys(updateData).length > 0) {
       Object.assign(service, updateData);

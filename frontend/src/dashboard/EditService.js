@@ -11,8 +11,9 @@ import { PDFViewer } from "@react-pdf/renderer";
 import AcceptanceActDocument from "../documentTemplates/AcceptanceAct";
 import BlackActDocument from "../documentTemplates/BlackAct";
 import DoneJobActDocument from "../documentTemplates/DoneJobAct";
- 
+
 import { Toaster, toast } from "react-hot-toast";
+import { REPAIR_PARTNERS, toDateInputValue } from "../data/repairConfig";
 
 export default function EditService() {
   const navigate = useNavigate();
@@ -69,6 +70,10 @@ export default function EditService() {
     hasCharger: yup.boolean().required("Has Charger is required"),
     status: yup.string().required("Status is required"),
     isContacted: yup.boolean().required("Is Contacted is required"),
+    repairPartner: yup
+      .string()
+      .oneOf(["", ...REPAIR_PARTNERS.map((p) => p.value)], "Neteisingas partneris"),
+    repairExpectedDate: yup.string(),
   });
 
   const currentSkin = localStorage.getItem("skin-mode") ? "dark" : "";
@@ -632,6 +637,8 @@ export default function EditService() {
                 status: data.status || "",
                 isContacted: Boolean(data.isContacted), // Convert to boolean
                 profit: data.profit || "0",
+                repairPartner: data.repairPartner || "",
+                repairExpectedDate: toDateInputValue(data.repairExpectedDate),
               }}
               enableReinitialize={true}
             >
@@ -786,6 +793,50 @@ export default function EditService() {
                             <option>Sutaisyta, pranešta</option>
                             <option>Atsiskaityta</option>
                           </Form.Control>
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="repairPartner">
+                            Išsiųsta taisyti
+                          </Form.Label>
+                          <Form.Select
+                            id="repairPartner"
+                            name="repairPartner"
+                            value={values.repairPartner}
+                            onChange={handleChange}
+                            isInvalid={!!errors.repairPartner}
+                          >
+                            <option value="">— Neišsiųsta —</option>
+                            {REPAIR_PARTNERS.map((p) => (
+                              <option key={p.value} value={p.value}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </Form.Select>
+                          <Form.Control.Feedback type="invalid">
+                            {errors.repairPartner}
+                          </Form.Control.Feedback>
+                        </div>
+                      </Col>
+                      <Col md={6}>
+                        <div className="mb-3">
+                          <Form.Label htmlFor="repairExpectedDate">
+                            Numatoma sutaisymo data
+                          </Form.Label>
+                          <Form.Control
+                            type="date"
+                            id="repairExpectedDate"
+                            name="repairExpectedDate"
+                            value={values.repairExpectedDate}
+                            onChange={handleChange}
+                            isInvalid={!!errors.repairExpectedDate}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.repairExpectedDate}
+                          </Form.Control.Feedback>
                         </div>
                       </Col>
                     </Row>

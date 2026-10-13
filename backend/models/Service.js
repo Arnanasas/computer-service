@@ -53,6 +53,16 @@ const serviceSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
+    // External partner the device was sent to for repair (optional)
+    repairPartner: {
+      type: String,
+      enum: ["termopasta", "fixas", "telesfera", "mindaugas", "other"],
+      default: null,
+    },
+    repairExpectedDate: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: { createdAt: "createdAt", updatedAt: "editedAt" },

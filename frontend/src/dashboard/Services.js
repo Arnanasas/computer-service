@@ -15,8 +15,12 @@ import io from "socket.io-client";
 import { Toaster, toast } from "react-hot-toast";
 
 import { statusConfig } from "../data/statusConfig";
+import { getRepairPartnerLabel, getRepairDueState, toDateInputValue } from "../data/repairConfig";
 
 const socket = io(`${import.meta.env.VITE_APP_SOCKET}`);
+
+// Statuses where the device is back (or archived), so an expected repair date no longer matters
+const REPAIR_DUE_IGNORED_STATUSES = ["Sutaisyta, pranešta", "Atsiskaityta", "jb"];
 
 export default function Services() {
   const { filter = "all" } = useParams();
@@ -165,6 +169,39 @@ export default function Services() {
     return <Badge bg={config.bg} className="px-2 py-1">{config.label}</Badge>;
   };
 
+  const renderRepairInfo = (item) => {
+    if (!item.repairPartner && !item.repairExpectedDate) return null;
+
+    const due = REPAIR_DUE_IGNORED_STATUSES.includes(item.status)
+      ? null
+      : getRepairDueState(item.repairExpectedDate);
+    const dateClass =
+      due === "overdue" ? "text-danger fw-semibold"
+      : due === "today" ? "text-warning fw-semibold"
+      : "text-muted";
+    const dateTitle =
+      due === "overdue" ? "Numatoma sutaisymo data praėjo"
+      : due === "today" ? "Numatoma sutaisymo data – šiandien"
+      : "Numatoma sutaisymo data";
+
+    return (
+      <div className="small mt-1 text-nowrap">
+        <i className="ri-truck-line me-1 text-muted"></i>
+        {item.repairPartner && <span>{getRepairPartnerLabel(item.repairPartner)}</span>}
+        {item.repairExpectedDate && (
+          <span className={`ms-1 ${dateClass}`} title={dateTitle}>
+            {due === "overdue" ? (
+              <i className="ri-error-warning-line me-1"></i>
+            ) : (
+              <i className="ri-time-line me-1"></i>
+            )}
+            {toDateInputValue(item.repairExpectedDate)}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <React.Fragment>
       <Header onSkin={setSkin} />
@@ -299,6 +336,7 @@ export default function Services() {
                           )}
                         </>
                       )}
+                      {renderRepairInfo(item)}
                     </td>
                     {filter !== "archive" && (
                       <td>

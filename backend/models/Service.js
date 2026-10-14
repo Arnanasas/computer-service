@@ -53,10 +53,11 @@ const serviceSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    // External partner the device was sent to for repair (optional)
+    // External partner the device was sent to for repair (optional).
+    // null must be listed: Mongoose's enum validator rejects null otherwise.
     repairPartner: {
       type: String,
-      enum: ["termopasta", "fixas", "telesfera", "mindaugas", "other"],
+      enum: ["termopasta", "fixas", "telesfera", "mindaugas", "other", null],
       default: null,
     },
     repairExpectedDate: {
